@@ -1,0 +1,14 @@
+# Node.js
+/node_modules
+/build
+/.env
+# Python
+__pycache__/
+*.pyc
+env/
+venv/
+*.sqlite3
+
+# OS Files
+.DS_Store
+Thumbs.db
