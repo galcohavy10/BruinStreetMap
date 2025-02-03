@@ -1,29 +1,41 @@
-Project Proposal - BruinStreetMap
-Team Information
-Darsh Verma (1C)
-Brandon Bogoniewski (1C)
-Gal Cohavy (1A)
-Jonathan Levi (1A)
-Samagra Pandey (1B)
+# Project Proposal - BruinStreetMap
 
-Team Name: BruinStreetMap
-Project Introduction
-Platform
-BruinStreetMap will be an interactive web application geared toward UCLA students. The development stack for the app is React.Js and React Router V6 on the frontend,  Flask for server-side communication, and a PostgresQL database to store user information and queries. Additionally, we will integrate the Google Maps Embed API to enable users to interactively zoom into certain areas for higher granularity.
-Motivation
-Current maps of UCLA are seemingly high-resolution, but fail to provide useful information that students can provide. The solution is having user-generated descriptors littered across the map with the highest ranking descriptions floating to the top. This would create a map like the one below, full of relevant information like best places to eat, study, or meet people. This idea was inspired by the open-source project “Hoodmaps” created by Pieter Levels, which fails to include any detail about UCLA.
+## Team Information
+- **Darsh Verma** (1C)
+- **Brandon Bogoniewski** (1C)
+- **Gal Cohavy** (1A)
+- **Jonathan Levi** (1A)
+- **Samagra Pandey** (1B)
 
-Detailed Description
-Bruins will be able to report information about different areas of UCLA, information can be any of the following:
-Safety
-Lighting
-Feel/Vibe
+**Team Name:** BruinStreetMap
 
-When signing up for an account users will be recommended to input information like major, clubs, sports, and hobbies which other users will be able to filter reports on. For example, a user may want to filter for reports made by CS majors. User’s personal information will not be revealed on the front end.
+## Project Introduction
 
-All reports will offer an upvote and downvote option, and the ability to add comments. 
+### Platform
+BruinStreetMap will be an interactive web application geared toward UCLA students. The development stack for the app is:
+- **Frontend:** React.js and React Router V6
+- **Server-Side:** Flask
+- **Database:** PostgreSQL (to store user information and queries)
 
-There will be an option to merge multiple similar reports into one report, and while users are writing in reports, if the report looks similar to another report, we will recommend that they upvote the other one.
+Additionally, the application will integrate the **Google Maps Embed API** to enable users to interactively zoom into specific areas for higher granularity.
+
+### Motivation
+Current maps of UCLA appear high-resolution but fail to provide useful, student-generated information. The proposed solution is to have user-generated descriptors placed across the map, with the highest-ranking descriptions floating to the top. This will create a map enriched with relevant information such as the best places to eat, study, or meet people. This idea is inspired by the open-source project “Hoodmaps” by Pieter Levels, which notably lacks detailed UCLA information.
+
+### Detailed Description
+- **User Reports:** Bruins will be able to report information about various areas of UCLA. The types of information include:
+  - Safety
+  - Lighting
+  - Feel/Vibe
+
+- **User Profiles:** During sign-up, users will be encouraged to input details such as major, clubs, sports, and hobbies. This information allows for filtering reports (e.g., filtering for reports made by CS majors). Note that personal information will remain confidential on the front end.
+
+- **Interaction:** 
+  - All reports will feature upvote and downvote options.
+  - Users will have the ability to add comments to reports.
+  - There will be an option to merge similar reports.
+  - When submitting a report, if the system detects a similar existing report, it will recommend that users upvote the existing report instead.
+
 
 Moderation:
 Only Bruins will be able to make reports or interact with the server-side data in any way (verified by @g.ucla.edu emails), but anyone can view the data of the map.
