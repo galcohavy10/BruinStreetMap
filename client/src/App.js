@@ -1,23 +1,34 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useRef, useEffect } from "react";
+// import leaflet from "./leaflet";
+import "./App.css";
+import LeafletMap from "./leafletmap";
+
+// let map = new L.map("map", mapOptions);
+
+// let layer = new L.TileLayer(
+//   "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+// );
+// map.addLayer(layer);
+
+// let marker = null;
+// map.on("click", (event) => {
+//   if (marker !== null) {
+//     map.removeLayer(marker);
+//   }
+
+//   marker = L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
+
+//   document.getElementById("latitude").value = event.latlng.lat;
+//   document.getElementById("longitude").value = event.latlng.lng;
+// });
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <div>
+        <h1>My Leaflet Map in React</h1>
+        <LeafletMap />
+      </div>
     </div>
   );
 }
