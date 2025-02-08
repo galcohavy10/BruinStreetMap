@@ -1,0 +1,118 @@
+/* Style the input popup form */
+.inputText {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 1000; /* Ensures it's on top of the map */
+  position: relative;
+}
+
+/* Style the text input */
+.inputText input {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Style the submit button */
+.inputText button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.inputText button:hover {
+  background: #0056b3;
+}
+
+/* Style the custom text marker */
+.custom-text-marker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Style the text label */
+.text-label {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Layout: Map and Sidebar */
+.map-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Sidebar Panel */
+.text-settings-panel {
+  height: 300px;
+  background: white;
+  padding: 15px;
+  /* border-right: 1px solid #ccc; */
+  box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.text-settings-panel h3 {
+  margin-bottom: 10px;
+}
+
+.text-settings-panel input,
+.text-settings-panel select {
+  padding: 5px;
+  font-size: 14px;
+}
+
+/* Save Button */
+.text-settings-panel button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.text-settings-panel button:hover {
+  background: #0056b3;
+}
+
+/* Custom Text Marker Styling */
+.custom-text-marker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.text-label {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+}

@@ -1,11 +1,10 @@
 import "./App.css";
-import LeafletMap from "./leafletmap";
+import LeafletMap from "./components/Map/LeafletMap";
 
 function App() {
   return (
     <div className="App">
       <div>
-        <h1>My Leaflet Map in React</h1>
         <LeafletMap />
       </div>
     </div>
