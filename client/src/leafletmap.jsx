@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -7,6 +7,8 @@ import {
   useMapEvents,
   Polygon,
   Rectangle,
+  useMap,
+  CircleMarker,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -14,6 +16,15 @@ import L from "leaflet";
 // Fix default marker issue in React-Leaflet
 import markerIconPng from "leaflet/dist/images/marker-icon.png";
 import markerShadowPng from "leaflet/dist/images/marker-shadow.png";
+
+const userIcon = L.divIcon({
+  className: "custom-user-icon",
+  html: `<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+           <circle cx="10" cy="10" r="8" fill="blue" stroke="white" stroke-width="3"/>
+         </svg>`,
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
 
 const defaultIcon = L.icon({
   iconUrl: markerIconPng,
@@ -74,8 +85,34 @@ function MouseTracker({ coordsRef }) {
   return null;
 }
 
+function UserLocation({ setUserPosition }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    // Get user's location
+    navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserPosition([latitude, longitude]);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+      },
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    );
+  }, [map, setUserPosition]);
+
+  return null;
+}
+
 const LeafletMap = () => {
   const coordsRef = useRef(null); // Store coordinates without triggering re-renders
+  const [userPosition, setUserPosition] = useState(null);
 
   // Only update UI every 100ms (prevents excessive renders)
   const [throttleCoords, setThrottleCoords] = useState(null);
@@ -86,20 +123,10 @@ const LeafletMap = () => {
     return () => clearInterval(interval);
   }, []);
 
-  console.log("Re-render"); // Now only logs on state changes
-
-  return (
-    <>
-      <MapContainer
-        center={center}
-        zoom={13}
-        style={{ height: "500px", width: "100%" }}
-        maxBounds={bounds}
-        maxBoundsViscosity={0.5}
-        minZoom={14}
-      >
-        <MouseTracker coordsRef={coordsRef} />
-
+  // Memoizing static elements so they don't re-render
+  const staticMapElements = useMemo(
+    () => (
+      <>
         {/* Tile Layer (OpenStreetMap) */}
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -127,6 +154,42 @@ const LeafletMap = () => {
           bounds={bounds}
           pathOptions={{ color: "red", fillColor: "none" }}
         />
+      </>
+    ),
+    []
+  );
+
+  console.log("Re-render"); // Now only logs on state changes
+
+  return (
+    <>
+      <MapContainer
+        center={center}
+        zoom={13}
+        style={{ height: "500px", width: "100%" }}
+        maxBounds={bounds}
+        maxBoundsViscosity={0.5}
+        minZoom={14}
+      >
+        <MouseTracker coordsRef={coordsRef} />
+
+        <UserLocation setUserPosition={setUserPosition} />
+
+        {/* Show user's location if available */}
+        {userPosition && <Marker position={userPosition} icon={userIcon} />}
+
+        {/* Draw a circle marker for smooth animation */}
+        {userPosition && (
+          <CircleMarker
+            center={userPosition}
+            radius={10}
+            fillColor="blue"
+            color="white"
+            fillOpacity={0.6}
+          />
+        )}
+
+        {staticMapElements}
       </MapContainer>
 
       {/* Display coordinates */}
