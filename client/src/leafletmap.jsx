@@ -65,11 +65,10 @@ const restrictedAreas = [
   ],
 ];
 
-function MouseTracker({ coordsRef, setCoords }) {
+function MouseTracker({ coordsRef }) {
   useMapEvents({
     mousemove: (e) => {
       coordsRef.current = e.latlng; // Store in ref (no re-renders)
-      setCoords(e.latlng); // Update state periodically for UI updates
     },
   });
   return null;
@@ -77,7 +76,6 @@ function MouseTracker({ coordsRef, setCoords }) {
 
 const LeafletMap = () => {
   const coordsRef = useRef(null); // Store coordinates without triggering re-renders
-  const [coords, setCoords] = useState(null); // Store UI-friendly coordinates
 
   // Only update UI every 100ms (prevents excessive renders)
   const [throttleCoords, setThrottleCoords] = useState(null);
@@ -100,7 +98,7 @@ const LeafletMap = () => {
         maxBoundsViscosity={0.5}
         minZoom={14}
       >
-        <MouseTracker coordsRef={coordsRef} setCoords={setCoords} />
+        <MouseTracker coordsRef={coordsRef} />
 
         {/* Tile Layer (OpenStreetMap) */}
         <TileLayer
