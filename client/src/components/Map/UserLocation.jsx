@@ -1,3 +1,4 @@
+// client/src/components/Map/UserLocation.jsx
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
 
@@ -10,10 +11,10 @@ export default function UserLocation({ setUserPosition }) {
       return;
     }
 
-    // Get user's location
     navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        console.log("User location updated:", latitude, longitude);
         setUserPosition([latitude, longitude]);
       },
       (error) => {

@@ -1,63 +1,58 @@
-import React, { useState, useEffect } from "react";
+// client/src/components/UI/TextSettingsPanel.jsx
+import React, { useState, useEffect } from 'react';
+import './TextSettingsPanel.css';
 
-const TextSettingsPanel = ({
-  selectedMarker,
-  setSelectedMarker,
-  updateMarkerSettings,
-}) => {
-  const [text, setText] = useState("");
-  const [color, setColor] = useState("black");
-  const [fontSize, setFontSize] = useState("14px");
+const TextSettingsPanel = ({ selectedMarker, setSelectedMarker, updateMarkerSettings }) => {
+  const [text, setText] = useState('');
 
-  // Sync UI with the selected marker
   useEffect(() => {
     if (selectedMarker) {
       setText(selectedMarker.text);
-      setColor(selectedMarker.color);
-      setFontSize(selectedMarker.fontSize);
     }
   }, [selectedMarker]);
 
-  // Handle form submission
-  const handleSave = () => {
-    if (selectedMarker) {
-      updateMarkerSettings({ ...selectedMarker, text, color, fontSize });
-      setSelectedMarker(null); // Close the panel after saving
+  const handleSave = async () => {
+    const apiBaseUrl = process.env.REACT_APP_API_URL;
+    try {
+      const response = await fetch(`${apiBaseUrl}/notes/${selectedMarker.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, color: '#000000' }), // always set color to black
+      });
+      const updatedNote = await response.json();
+      updateMarkerSettings({
+        id: updatedNote.id,
+        coords: selectedMarker.coords,
+        text: updatedNote.text,
+        color: '#000000',
+        fontSize: selectedMarker.fontSize, // unchanged
+      });
+      setSelectedMarker(null);
+    } catch (error) {
+      console.error("Error updating note:", error);
     }
   };
 
-  if (!selectedMarker) return null; // Hide if no marker is selected
+  if (!selectedMarker) return null;
 
-
-
-  return selectedMarker ? (
+  return (
     <div className="text-settings-panel">
-      <h3>Edit Text Marker</h3>
-      <label>Text:</label>
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-
-      <label>Text Color:</label>
-      <input
-        type="color"
-        value={color}
-        onChange={(e) => setColor(e.target.value)}
-      />
-
-      <label>Font Size:</label>
-      <select value={fontSize} onChange={(e) => setFontSize(e.target.value)}>
-        <option value="12px">Small</option>
-        <option value="14px">Medium</option>
-        <option value="18px">Large</option>
-        <option value="24px">X-Large</option>
-      </select>
-
-      <button onClick={handleSave}>Save</button>
+      <h2>Edit Marker</h2>
+      <div className="section">
+        <label>Marker Text</label>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Enter marker text"
+          rows="3"
+        />
+      </div>
+      <div className="actions">
+        <button className="save-btn" onClick={handleSave}>Save</button>
+        <button className="cancel-btn" onClick={() => setSelectedMarker(null)}>Cancel</button>
+      </div>
     </div>
-  ) : null;
+  );
 };
 
 export default TextSettingsPanel;

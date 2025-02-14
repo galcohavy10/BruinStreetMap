@@ -37,6 +37,26 @@ const LeafletMap = () => {
     return () => clearInterval(interval);
   }, []);
 
+    // *** NEW: Fetch notes from backend on mount ***
+    useEffect(() => {
+      const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+      fetch(`${apiBaseUrl}/notes`)
+        .then((response) => response.json())
+        .then((data) => {
+          // Transform each note to match expected structure
+          const transformedMarkers = data.map((note) => ({
+            id: note.id,
+            coords: { lat: note.lat, lng: note.lng },
+            text: note.text,
+            color: note.color,
+            fontSize: note.fontSize,
+          }));
+          setMarkers(transformedMarkers);
+        })
+        .catch((error) => console.error("Error fetching notes:", error));
+    }, []);
+    
+
   const updateMarkerSettings = (updatedMarker) => {
     setMarkers((prevMarkers) =>
       prevMarkers.map((marker) =>
