@@ -41,7 +41,9 @@ const AddText = ({ markers, setMarkers, setSelectedMarker }) => {
           // Replace the temporary marker with the one returned by the backend
           setMarkers((prevMarkers) =>
             prevMarkers.map((marker) =>
-              marker.id === newMarker.id ? { ...marker, id: savedNote.id } : marker
+              marker.id === newMarker.id
+                ? { ...marker, id: savedNote.id }
+                : marker
             )
           );
           // Only open the settings panel once we have the proper (numeric) id
