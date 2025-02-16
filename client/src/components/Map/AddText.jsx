@@ -64,6 +64,8 @@ const AddText = ({ markers, setMarkers, setSelectedMarker }) => {
       iconAnchor: [50, 15],
     });
 
+  markers.forEach((marker) => console.log(marker));
+
   return (
     <>
       <ClickHandler />

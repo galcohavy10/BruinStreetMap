@@ -40,7 +40,7 @@ const LeafletMap = () => {
   // *** NEW: Fetch notes from backend on mount ***
   useEffect(() => {
     const apiBaseUrl = process.env.REACT_APP_API_URL || "";
-    fetch(`${apiBaseUrl}/notes`)
+    fetch(`${apiBaseUrl}/notes`, { method: "GET" })
       .then((response) => response.json())
       .then((data) => {
         // Transform each note to match expected structure
@@ -49,7 +49,7 @@ const LeafletMap = () => {
           coords: { lat: note.lat, lng: note.lng },
           text: note.text,
           color: note.color,
-          fontSize: note.fontSize,
+          fontSize: note.font_size,
         }));
         setMarkers(transformedMarkers);
       })

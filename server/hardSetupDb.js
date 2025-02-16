@@ -4,6 +4,7 @@ const pool = require("./db");
 async function setup() {
   try {
     await pool.query(`
+      DROP TABLE IF EXISTS notes;
       CREATE TABLE IF NOT EXISTS notes (
         id SERIAL PRIMARY KEY,
         lat DOUBLE PRECISION NOT NULL,
