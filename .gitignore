@@ -1,7 +1,7 @@
 # Node.js
 /node_modules
 /build
-/.env
+*/.env
 
 # OS Files
 .DS_Store
