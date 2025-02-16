@@ -8,7 +8,7 @@ import CoordinatesDisplay from "../UI/CoordinatesDisplay";
 import TextLabels from "./MapLabels"; // Import text label component
 import StaticMapElements, { bounds } from "./StaticMapElements";
 import TextSettingsPanel from "../UI/TextSettingsPanel";
-import AddText from "./AddText"; 
+import AddText from "./AddText";
 
 // TODO: Allow users to change position of the labels, and add an X button to the text settings panel.
 
@@ -35,6 +35,25 @@ const LeafletMap = () => {
       setThrottleCoords(coordsRef.current);
     }, 100); // Adjust interval as needed (100ms is smooth enough)
     return () => clearInterval(interval);
+  }, []);
+
+  // *** NEW: Fetch notes from backend on mount ***
+  useEffect(() => {
+    const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+    fetch(`${apiBaseUrl}/notes`)
+      .then((response) => response.json())
+      .then((data) => {
+        // Transform each note to match expected structure
+        const transformedMarkers = data.map((note) => ({
+          id: note.id,
+          coords: { lat: note.lat, lng: note.lng },
+          text: note.text,
+          color: note.color,
+          fontSize: note.fontSize,
+        }));
+        setMarkers(transformedMarkers);
+      })
+      .catch((error) => console.error("Error fetching notes:", error));
   }, []);
 
   const updateMarkerSettings = (updatedMarker) => {

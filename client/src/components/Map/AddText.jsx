@@ -1,57 +1,84 @@
+// client/src/components/Map/AddText.jsx
 import { Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "./map.css";
 
 const AddText = ({ markers, setMarkers, setSelectedMarker }) => {
-  // Handle Click Events on the Map
   function ClickHandler() {
     useMapEvents({
-      click: (e) => {
+      click: async (e) => {
+        // Use a temporary string ID so it doesn't conflict with the DB's integer IDs
         const newMarker = {
-          id: Date.now(),
+          id: `temp-${Date.now()}`,
           coords: e.latlng,
-          text: "", // Initially empty, user will input text
-          color: "#000000", // Default text color
-          fontSize: "14px", // Default font size
+          text: "",
+          color: "#000000",
+          fontSize: "20px",
         };
 
+        // Optimistically add the marker to the UI
         setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
-        setSelectedMarker(newMarker); // Open text settings panel for this marker
+
+        // Use the API URL from env variables
+        const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+        try {
+          const response = await fetch(`${apiBaseUrl}/notes`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              lat: newMarker.coords.lat,
+              lng: newMarker.coords.lng,
+              text: newMarker.text,
+              color: newMarker.color,
+              fontSize: newMarker.fontSize,
+            }),
+          });
+          const savedNote = await response.json();
+
+          // Replace the temporary marker with the one returned by the backend
+          setMarkers((prevMarkers) =>
+            prevMarkers.map((marker) =>
+              marker.id === newMarker.id
+                ? { ...marker, id: savedNote.id }
+                : marker
+            )
+          );
+          // Only open the settings panel once we have the proper (numeric) id
+          setSelectedMarker({ ...newMarker, id: savedNote.id });
+        } catch (error) {
+          console.error("Error saving note:", error);
+        }
       },
     });
     return null;
   }
 
-  // Function to update the selected marker's properties
+  const createTextIcon = (text, color, fontSize) =>
+    L.divIcon({
+      className: "custom-text-marker",
+      html: `<div class="text-label" style="color: ${color}; font-size: ${fontSize};">${text}</div>`,
+      iconSize: [100, 30],
+      iconAnchor: [50, 15],
+    });
 
   return (
     <>
-      {/* Handle Clicks on Map */}
       <ClickHandler />
-
-      {/* Render Markers */}
       {markers.map((marker) => (
         <Marker
           key={marker.id}
           position={marker.coords}
           icon={createTextIcon(marker.text, marker.color, marker.fontSize)}
           eventHandlers={{
-            click: () => setSelectedMarker(marker), // Open panel when clicking a marker
+            click: () => setSelectedMarker(marker),
           }}
         />
       ))}
     </>
   );
 };
-
-// Function to create a custom text marker
-const createTextIcon = (text, color, fontSize) =>
-  L.divIcon({
-    className: "custom-text-marker",
-    html: `<div class="text-label" style="color: ${color}; font-size: ${fontSize};">${text}</div>`,
-    iconSize: [100, 30],
-    iconAnchor: [50, 15],
-  });
 
 export default AddText;
