@@ -12,6 +12,7 @@ function Login({ onLogin }) {
     if(userEmail.endsWith("@g.ucla.edu")){
       console.log("Authenticated:",userEmail);
       onLogin(decodedUser);
+      console.log(decodedUser);
     }
     else{
       handleLoginFail();
