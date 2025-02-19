@@ -1,0 +1,36 @@
+/* Login.css */
+.login-container {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(to right, #4A90E2, #145DA0);
+  }
+  
+  .login-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 350px;
+  }
+  
+  .login-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #145DA0;
+    margin-bottom: 10px;
+  }
+  
+  .login-subtext {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 20px;
+  }
+  
+  .google-login-button {
+    display: flex;
+    justify-content: center;
+  }
+  
