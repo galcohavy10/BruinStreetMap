@@ -80,3 +80,11 @@ Replace `youruser` and `yourpassword` with your actual computer credentials or P
 ```
 
 ```
+
+# JS Scripts
+
+use hardSetupDb.js to recreate all tables on the database
+use setupDb.js to create the tables on the database (will not update tables that already exist)
+use index.js to run the server
+
+Tests do not work as of 2/23/25
