@@ -3,11 +3,16 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "./map.css";
 
-const AddText = ({ markers, setMarkers, setSelectedMarker }) => {
+const AddText = ({ markers, setMarkers, setSelectedMarker, role }) => {
   // Handle Click Events on the Map
   function ClickHandler() {
     useMapEvents({
       click: (e) => {
+        if(role=="viewer"){
+          alert("You only have viewing access.");
+          return;
+        }
+
         const newMarker = {
           id: Date.now(),
           coords: e.latlng,

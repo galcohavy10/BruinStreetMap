@@ -4,7 +4,7 @@ import { useState } from "react";
 import Login from "./Login.js";
 import LeafletMap from "./components/Map/LeafletMap";
 
-const CLIENT_ID =process.env.REACT_APP_GOOGLE_AUTH_CLIENT_ID;
+const CLIENT_ID ='22705282070-u8depo5tckdvp7damoi2sjpcscttjo9u.apps.googleusercontent.com';
 
 
 function App() {
@@ -15,7 +15,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={user ? <Navigate to="/map" /> : <Login onLogin={setUser}/>}/>
-          <Route path="/map" element={user ? <LeafletMap/> : <Navigate to="/"/>}/>
+          <Route path="/map" element={user ? <LeafletMap user={user}/> : <Navigate to="/"/>}/>
         </Routes>
       </Router>
     </GoogleOAuthProvider>

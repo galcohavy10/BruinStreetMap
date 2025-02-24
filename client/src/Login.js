@@ -8,15 +8,15 @@ function Login({ onLogin }) {
   const handleLoginSuccess=(credentialResponse) => {
     const decodedUser = jwtDecode(credentialResponse.credential);
     const userEmail = decodedUser.email;
-    
+    let role = "viewer";
+
     if(userEmail.endsWith("@g.ucla.edu")){
-      console.log("Authenticated:",userEmail);
-      onLogin(decodedUser);
-      console.log(decodedUser);
+      role = "editor";
     }
-    else{
-      handleLoginFail();
-    }
+
+    console.log('Authenticated:', role, userEmail);
+    onLogin({...decodedUser, role});
+    console.log(decodedUser);
 
   }
   const handleLoginFail=() => {

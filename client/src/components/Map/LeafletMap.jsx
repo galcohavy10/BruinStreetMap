@@ -22,7 +22,7 @@ const mapLabels = [
   { coords: { lat: 34.072, lng: -118.44 }, text: "Point B" },
 ]; // intended to be used for labeling buildings
 
-const LeafletMap = () => {
+const LeafletMap = ({ user }) => {
   const coordsRef = useRef(null); // Store coordinates without triggering re-renders
   const [userPosition, setUserPosition] = useState(null);
   const [markers, setMarkers] = useState([]); // Stores all text markers
@@ -79,6 +79,7 @@ const LeafletMap = () => {
           markers={markers}
           setMarkers={setMarkers}
           setSelectedMarker={setSelectedMarker}
+          role={user.role}
         />
         {StaticMapElements()}
       </MapContainer>
