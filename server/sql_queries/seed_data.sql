@@ -1,6 +1,7 @@
 -- Insert Users
 INSERT INTO users (username, email, major, clubs) VALUES
     ('alice123', 'alice@example.com', 'Computer Science', ARRAY['AI Club', 'Robotics']),
+    ('maya12', 'maya21@example.com', 'Computer Science', ARRAY['Robotics', 'Chess Club']),
     ('bob456', 'bob@example.com', 'Physics', ARRAY['Astronomy Club']),
     ('charlie789', 'charlie@example.com', 'Mathematics', ARRAY['Math Club', 'Chess Club']),
     ('dave101', 'dave@example.com', 'Engineering', ARRAY['Rocketry Club']),

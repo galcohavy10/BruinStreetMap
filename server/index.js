@@ -111,6 +111,26 @@ app.post("/posts", async (req, res) => {
   }
 });
 
+/** FILTER POSTS BY USER INFO (Major & Clubs) */
+app.get("/posts/filter", async (req, res) => {
+  const { major, clubs } = req.query;
+
+  try {
+    const result = await pool.query(
+      `SELECT posts.* FROM posts
+       JOIN users ON posts.user_id = users.id
+       WHERE ($1::TEXT IS NULL OR users.major = $1)
+       AND ($2::TEXT[] IS NULL OR users.clubs && ARRAY[$2])`,
+      [major, clubs]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.log("Error filtering posts", error);
+    res.status(500).json({ error: "Error filtering posts" });
+  }
+});
+
 /** GET A SPECIFIC POST */
 app.get("/posts/:id", async (req, res) => {
   const { id } = req.params;
@@ -218,25 +238,6 @@ app.post("/comments/:id/remove-vote", async (req, res) => {
     res.json({ message: "Vote removed successfully!" });
   } catch (error) {
     res.status(500).json({ error: "Error removing vote." });
-  }
-});
-
-/** FILTER POSTS BY USER INFO (Major & Clubs) */
-app.get("/posts/filter", async (req, res) => {
-  const { major, clubs } = req.query;
-
-  try {
-    const result = await pool.query(
-      `SELECT posts.* FROM posts
-       JOIN users ON posts.user_id = users.id
-       WHERE ($1 IS NULL OR users.major = $1)
-       AND ($2 IS NULL OR users.clubs @> ARRAY[$2])`,
-      [major, clubs]
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: "Error filtering posts" });
   }
 });
 
