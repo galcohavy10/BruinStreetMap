@@ -1,0 +1,1 @@
+SELECT * FROM posts WHERE user_id = (SELECT id FROM users WHERE username = 'example_user');
