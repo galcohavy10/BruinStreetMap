@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MapContainer, Marker, CircleMarker } from "react-leaflet";
+import { MapContainer, Marker, CircleMarker, Polygon } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { userIcon } from "./Markers";
 import MouseTracker from "./MouseTracker";
@@ -27,6 +27,7 @@ const LeafletMap = () => {
   const [userPosition, setUserPosition] = useState(null);
   const [markers, setMarkers] = useState([]); // Stores all text markers
   const [selectedMarker, setSelectedMarker] = useState(null); // Marker currently being edited
+  const [drawingBoundary, setDrawingBoundary] = useState([]); //Mark the coordinates of the label boundary polygon
 
   // Only update UI every 100ms (prevents excessive renders)
   const [throttleCoords, setThrottleCoords] = useState(null);
@@ -64,6 +65,25 @@ const LeafletMap = () => {
     );
   };
 
+
+//handle clicking finish
+const handleFinishDrawing = () => {
+  if (!selectedMarker || drawingBoundary.length < 3) return; // A polygon needs at least 3 points
+
+  setMarkers((prevMarkers) =>
+    {
+      return prevMarkers.map((marker) =>
+        marker.id === selectedMarker
+          ? { ...marker, boundary: drawingBoundary }
+          : marker
+      );
+    }
+  );
+
+  setSelectedMarker(null);
+  setDrawingBoundary(null); // Exit drawing mode
+};
+
   return (
     <div className="map-container">
       <MapContainer
@@ -91,6 +111,33 @@ const LeafletMap = () => {
             fillOpacity={0.6}
           />
         )}
+        {/*{markers.map((marker) => (
+          <React.Fragment key={marker.id}>
+            <Marker position={[marker.coords.lat, marker.coords.lng]}>
+              <Popup>{marker.text}</Popup>
+            </Marker>
+
+            {marker.boundary?.length > 2 && (
+              <Polygon
+                positions={marker.boundary}
+                color="blue"
+                fillOpacity={0.3}
+              />
+            )}
+          </React.Fragment>
+        ))}*/}
+
+        {/* Show live drawing */}
+        {drawingBoundary && drawingBoundary.length > 1 && (
+          <Polygon positions={drawingBoundary} color="red" fillOpacity={0.3} />
+        )}
+
+        {/* Finish button (Only visible when drawing) */}
+        {drawingBoundary && drawingBoundary.length > 2 && (
+          <button onClick={handleFinishDrawing} style={{ position: "absolute", top: 10, left: 10, zIndex: 1000 }}>
+            Finish Boundary
+          </button>
+        )}
 
         {/* Render Text Labels */}
         <TextLabels mapLabels={mapLabels} />
@@ -98,6 +145,9 @@ const LeafletMap = () => {
           markers={markers}
           setMarkers={setMarkers}
           setSelectedMarker={setSelectedMarker}
+          selectedMarker = {selectedMarker}
+          drawingBoundary={drawingBoundary}
+          setDrawingBoundary={setDrawingBoundary}
         />
         {StaticMapElements()}
       </MapContainer>
