@@ -9,6 +9,7 @@ import TextLabels from "./MapLabels"; // Import text label component
 import StaticMapElements, { bounds } from "./StaticMapElements";
 import TextSettingsPanel from "../UI/TextSettingsPanel";
 import AddText from "./AddText";
+import "./map.css";
 
 // TODO: Allow users to change position of the labels, and add an X button to the text settings panel.
 
@@ -27,6 +28,7 @@ const LeafletMap = () => {
   const [userPosition, setUserPosition] = useState(null);
   const [markers, setMarkers] = useState([]); // Stores all text markers
   const [selectedMarker, setSelectedMarker] = useState(null); // Marker currently being edited
+  const addTextRef = useRef(null);
 
   // Only update UI every 100ms (prevents excessive renders)
   const [throttleCoords, setThrottleCoords] = useState(null);
@@ -64,6 +66,12 @@ const LeafletMap = () => {
     );
   };
 
+  const handleAddTextAtLocation = () => {
+    if (addTextRef.current && userPosition) {
+      addTextRef.current.addTextAtCurrentLocation();
+    }
+  };
+
   return (
     <div className="map-container">
       <MapContainer
@@ -95,9 +103,11 @@ const LeafletMap = () => {
         {/* Render Text Labels */}
         <TextLabels mapLabels={mapLabels} />
         <AddText
+          ref={addTextRef}
           markers={markers}
           setMarkers={setMarkers}
           setSelectedMarker={setSelectedMarker}
+          userPosition={userPosition}
         />
         {StaticMapElements()}
       </MapContainer>
@@ -109,6 +119,15 @@ const LeafletMap = () => {
       />
 
       <CoordinatesDisplay coords={throttleCoords} />
+
+      {userPosition && (
+        <button 
+          className="add-text-button"
+          onClick={handleAddTextAtLocation}
+        >
+          Add Text at Your Location
+        </button>
+      )}
     </div>
   );
 };
