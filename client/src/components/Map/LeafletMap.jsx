@@ -6,7 +6,8 @@ import {
   Tooltip, 
   Popup, 
   ZoomControl,
-  useMap
+  useMap,
+  Polygon
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { userIcon } from "./Markers";
@@ -94,6 +95,7 @@ const LeafletMap = () => {
   const [throttleCoords, setThrottleCoords] = useState(null);
   const [activeNote, setActiveNote] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [drawingBoundary, setDrawingBoundary] = useState([])
   
   // Votes tracking with starting value of 0 (not random)
   const [votes, setVotes] = useState({});
@@ -182,6 +184,8 @@ useEffect(() => {
     // Store selected location and show note form
     setSelectedLocation(latlng);
     setShowNoteForm(true);
+    const { lat, lng } = latlng;
+    setDrawingBoundary([...drawingBoundary, [lat, lng]])
   };
 
   const submitNote = async () => {
@@ -195,9 +199,13 @@ useEffect(() => {
       text: noteText,
       color: "#000000",
       font_size: "20px",
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      bounds: drawingBoundary
     };
     
+    //reset drawingBoundary to empty array
+    setDrawingBoundary([]);
+
     // Optimistically add to UI
     setNotes(prev => [...prev, newNote]);
     
@@ -491,6 +499,10 @@ useEffect(() => {
         <UserLocation setUserPosition={setUserPosition} />
         <ClickHandler onMapClick={handleMapClick} />
 
+        {/* Show live drawing bounds*/}
+        {drawingBoundary && drawingBoundary.length > 1 && (
+          <Polygon positions={drawingBoundary} color="red" fillOpacity={0.3} />
+        )}
         {/* User location marker */}
         {userPosition && (
           <>
@@ -524,8 +536,10 @@ useEffect(() => {
         {notes.map(note => {
           const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
           const isHighlighted = activeNote && activeNote.id === note.id;
-          
+          /* Render bounds if selected, or else a circle marker*/
           return (
+            <>
+            {note.bounds.length > 2 ? <Polygon positions={note.bounds} color="red" fillOpacity={0.3} /> : 
             <CircleMarker
               key={note.id}
               center={[note.lat, note.lng]}
@@ -606,6 +620,8 @@ useEffect(() => {
                 </Popup>
               )}
             </CircleMarker>
+            }
+          </>
           );
         })}
 
