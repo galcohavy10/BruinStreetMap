@@ -1,0 +1,1 @@
+SELECT * FROM comments WHERE post_id = 123 ORDER BY created_at;

@@ -1,0 +1,1 @@
+SELECT SUM(vote_type) AS score FROM votes WHERE comment_id = 456;
