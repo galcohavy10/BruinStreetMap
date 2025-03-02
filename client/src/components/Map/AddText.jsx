@@ -1,22 +1,19 @@
-//modifying
 // client/src/components/Map/AddText.jsx
 import { Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "./map.css";
 
-const AddText = ({ markers, setMarkers, setSelectedMarker }) => {
-  function ClickHandler() {
-    useMapEvents({
-      click: async (e) => {
-        // Use a temporary string ID so it doesn't conflict with the DB's integer IDs
-        const newMarker = {
-          id: `temp-${Date.now()}`,
-          coords: e.latlng,
-          text: "",
-          color: "#000000",
-          fontSize: "20px",
-        };
+const AddText = ({ markers, setMarkers, setSelectedMarker, userPosition }) => {
+  const addMarkerAtPosition = async (position) => {
+    // Use a temporary string ID so it doesn't conflict with the DB's integer IDs
+    const newMarker = {
+      id: `temp-${Date.now()}`,
+      coords: position,
+      text: "",
+      color: "#000000",
+      fontSize: "20px",
+    };
 
         // Optimistically add the marker to the UI
         setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
@@ -39,19 +36,25 @@ const AddText = ({ markers, setMarkers, setSelectedMarker }) => {
           });
           const savedNote = await response.json();
 
-          // Replace the temporary marker with the one returned by the backend
-          setMarkers((prevMarkers) =>
-            prevMarkers.map((marker) =>
-              marker.id === newMarker.id
-                ? { ...marker, id: savedNote.id }
-                : marker
-            )
-          );
-          // Only open the settings panel once we have the proper (numeric) id
-          setSelectedMarker({ ...newMarker, id: savedNote.id });
-        } catch (error) {
-          console.error("Error saving note:", error);
-        }
+      // Replace the temporary marker with the one returned by the backend
+      setMarkers((prevMarkers) =>
+        prevMarkers.map((marker) =>
+          marker.id === newMarker.id
+            ? { ...marker, id: savedNote.id }
+            : marker
+        )
+      );
+      // Only open the settings panel once we have the proper (numeric) id
+      setSelectedMarker({ ...newMarker, id: savedNote.id });
+    } catch (error) {
+      console.error("Error saving note:", error);
+    }
+  };
+
+  function ClickHandler() {
+    useMapEvents({
+      click: async (e) => {
+        await addMarkerAtPosition(e.latlng);
       },
     });
     return null;
@@ -64,6 +67,22 @@ const AddText = ({ markers, setMarkers, setSelectedMarker }) => {
       iconSize: [100, 30],
       iconAnchor: [50, 15],
     });
+
+  // Function to add text at current location
+  const addTextAtCurrentLocation = async () => {
+    if (!userPosition) {
+      console.error("User position not available");
+      return;
+    }
+    
+    // Convert userPosition array to latlng object
+    const position = {
+      lat: userPosition[0],
+      lng: userPosition[1]
+    };
+    
+    await addMarkerAtPosition(position);
+  };
 
   markers.forEach((marker) => console.log(marker));
 
