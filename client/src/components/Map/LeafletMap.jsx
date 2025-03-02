@@ -1,182 +1,743 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MapContainer, Marker, CircleMarker, Polygon } from "react-leaflet";
+import { 
+  MapContainer, 
+  Marker, 
+  CircleMarker, 
+  Tooltip, 
+  Popup, 
+  ZoomControl,
+  useMap
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { userIcon } from "./Markers";
 import MouseTracker from "./MouseTracker";
 import UserLocation from "./UserLocation";
 import CoordinatesDisplay from "../UI/CoordinatesDisplay";
-import TextLabels from "./MapLabels"; // Import text label component
+import TextLabels from "./MapLabels";
 import StaticMapElements, { bounds } from "./StaticMapElements";
-import TextSettingsPanel from "../UI/TextSettingsPanel";
-import AddText from "./AddText";
 import "./map.css";
 
-// TODO: Allow users to change position of the labels, and add an X button to the text settings panel.
-
+// Center of UCLA campus
 const center = [
   (bounds[0][0] + bounds[1][0]) / 2,
   (bounds[0][1] + bounds[1][1]) / 2,
 ];
 
+// Add accurate coordinates for UCLA buildings
 const mapLabels = [
-  { coords: { lat: 34.065, lng: -118.445 }, text: "Point A" },
-  { coords: { lat: 34.072, lng: -118.44 }, text: "Point B" },
-]; // intended to be used for labeling buildings
+  { coords: { lat: 34.0729, lng: -118.4422 }, text: "Royce Hall" },
+  { coords: { lat: 34.0716, lng: -118.4422 }, text: "Powell Library" },
+  { coords: { lat: 34.07219, lng: -118.44317 }, text: "Janss Steps" },
+  { coords: { lat: 34.070406, lng: -118.444259 }, text: "Ackerman Union" },
+];
+
+// Icons for the UI
+const CommentIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+);
+
+const SearchIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+);
+
+const UpvoteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+);
+
+const DownvoteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 5v14M5 12l7 7 7-7"/>
+  </svg>
+);
+
+// ClickHandler component to detect map clicks
+const ClickHandler = ({ onMapClick }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    const handleClick = (e) => {
+      onMapClick(e.latlng);
+    };
+    
+    map.on('click', handleClick);
+    
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [map, onMapClick]);
+  
+  return null;
+};
 
 const LeafletMap = () => {
-  const coordsRef = useRef(null); // Store coordinates without triggering re-renders
+  const coordsRef = useRef(null);
   const [userPosition, setUserPosition] = useState(null);
-  const [markers, setMarkers] = useState([]); // Stores all text markers
-  const [selectedMarker, setSelectedMarker] = useState(null); // Marker currently being edited
-  const addTextRef = useRef(null);
-  const [drawingBoundary, setDrawingBoundary] = useState([]); //Mark the coordinates of the label boundary polygon
-
-  // Only update UI every 100ms (prevents excessive renders)
+  const [notes, setNotes] = useState([]);
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [showNotesList, setShowNotesList] = useState(false);
   const [throttleCoords, setThrottleCoords] = useState(null);
+  const [activeNote, setActiveNote] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Votes tracking with starting value of 0 (not random)
+  const [votes, setVotes] = useState({});
+  // Track user votes to prevent multiple voting
+  const [userVotes, setUserVotes] = useState({});
+  
+  // Throttled coordinate updates
   useEffect(() => {
     const interval = setInterval(() => {
       setThrottleCoords(coordsRef.current);
-    }, 100); // Adjust interval as needed (100ms is smooth enough)
+    }, 100);
     return () => clearInterval(interval);
   }, []);
 
-  // *** NEW: Fetch notes from backend on mount ***
+  // Fetch notes from API
   useEffect(() => {
-    const apiBaseUrl = process.env.REACT_APP_API_URL || "";
-    fetch(`${apiBaseUrl}/notes`, { method: "GET" })
-      .then((response) => response.json())
-      .then((data) => {
-        // Transform each note to match expected structure
-        const transformedMarkers = data.map((note) => ({
-          id: note.id,
-          coords: { lat: note.lat, lng: note.lng },
-          text: note.text,
-          color: note.color,
-          fontSize: note.font_size,
-        }));
-        setMarkers(transformedMarkers);
-      })
-      .catch((error) => console.error("Error fetching notes:", error));
+    const fetchNotes = async () => {
+      const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+      try {
+        const response = await fetch(`${apiBaseUrl}/notes`);
+        
+        if (!response.ok) {
+          // Don't set sample data, just use empty array
+          setNotes([]);
+          return;
+        }
+        
+        const data = await response.json();
+        setNotes(data);
+        
+        // Initialize votes to 0
+        const initialVotes = {};
+        data.forEach(note => {
+          initialVotes[note.id] = {
+            upvotes: 0,
+            downvotes: 0
+          };
+        });
+        setVotes(initialVotes);
+        
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+        setNotes([]);
+      }
+    };
+    
+    fetchNotes();
+
+    
   }, []);
 
-  const updateMarkerSettings = (updatedMarker) => {
-    setMarkers((prevMarkers) =>
-      prevMarkers.map((marker) =>
-        marker.id === updatedMarker.id ? updatedMarker : marker
-      )
-    );
-  };
-
-  const handleAddTextAtLocation = () => {
-    if (addTextRef.current && userPosition) {
-      addTextRef.current.addTextAtCurrentLocation();
-    }
-  };
-
-//handle clicking finish
-const handleFinishDrawing = () => {
-  if (!selectedMarker || drawingBoundary.length < 3) return; // A polygon needs at least 3 points
-
-  setMarkers((prevMarkers) =>
-    {
-      return prevMarkers.map((marker) =>
-        marker.id === selectedMarker
-          ? { ...marker, boundary: drawingBoundary }
-          : marker
+  // Add this right after the useEffect where you fetch notes
+useEffect(() => {
+  if (notes.length === 0) return;
+  
+  const fetchVotes = async () => {
+    const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+    try {
+      // Fetch votes for each note
+      const votePromises = notes.map(note => 
+        fetch(`${apiBaseUrl}/notes/${note.id}/votes`)
+          .then(res => res.ok ? res.json() : { upvotes: "0", downvotes: "0" })
       );
+      
+      const voteResults = await Promise.all(votePromises);
+      
+      // Create votes object
+      const votesObj = {};
+      notes.forEach((note, index) => {
+        votesObj[note.id] = {
+          upvotes: parseInt(voteResults[index].upvotes || 0),
+          downvotes: parseInt(voteResults[index].downvotes || 0)
+        };
+      });
+      
+      setVotes(votesObj);
+    } catch (error) {
+      console.error("Error fetching votes:", error);
     }
+  };
+  
+  fetchVotes();
+}, [notes]);
+
+  const handleMapClick = (latlng) => {
+    // Store selected location and show note form
+    setSelectedLocation(latlng);
+    setShowNoteForm(true);
+  };
+
+  const submitNote = async () => {
+    if (!noteText || !selectedLocation) return;
+    
+    // Prepare the new note
+    const newNote = {
+      id: `temp-${Date.now()}`,
+      lat: selectedLocation.lat,
+      lng: selectedLocation.lng,
+      text: noteText,
+      color: "#000000",
+      font_size: "20px",
+      created_at: new Date().toISOString()
+    };
+    
+    // Optimistically add to UI
+    setNotes(prev => [...prev, newNote]);
+    
+    // Initialize votes to 0
+    setVotes(prev => ({
+      ...prev,
+      [newNote.id]: { upvotes: 0, downvotes: 0 }
+    }));
+    
+    // Reset form
+    setNoteText("");
+    setShowNoteForm(false);
+    
+    // Submit to API
+    const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+    try {
+      const response = await fetch(`${apiBaseUrl}/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lat: selectedLocation.lat,
+          lng: selectedLocation.lng,
+          text: noteText,
+          color: "#000000",
+          fontSize: "20px"
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+      
+      // Update with server data
+      const savedNote = await response.json();
+      setNotes(prev => 
+        prev.map(note => note.id === newNote.id ? savedNote : note)
+      );
+      
+      // Update votes with the real ID
+      setVotes(prev => {
+        const newVotes = { ...prev };
+        newVotes[savedNote.id] = newVotes[newNote.id];
+        delete newVotes[newNote.id];
+        return newVotes;
+      });
+      
+    } catch (error) {
+      console.error("Error saving note:", error);
+      // Keep optimistic update in UI
+    }
+  };
+
+  const handleVote = async (noteId, isUpvote) => {
+    const currentVote = userVotes[noteId];
+    const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+    
+    // Toggle vote if clicking the same button
+    if (currentVote === 'up' && isUpvote) {
+      // Remove upvote
+      try {
+        await fetch(`${apiBaseUrl}/notes/${noteId}/remove-vote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: 1 }) // Use actual user ID when available
+        });
+        
+        // Update local state
+        setVotes(prev => {
+          const noteVotes = prev[noteId] || { upvotes: 0, downvotes: 0 };
+          return {
+            ...prev,
+            [noteId]: {
+              upvotes: Math.max(0, noteVotes.upvotes - 1),
+              downvotes: noteVotes.downvotes
+            }
+          };
+        });
+        
+        setUserVotes(prev => {
+          const newUserVotes = { ...prev };
+          delete newUserVotes[noteId];
+          return newUserVotes;
+        });
+      } catch (error) {
+        console.error("Error removing vote:", error);
+      }
+      return;
+    }
+    
+    if (currentVote === 'down' && !isUpvote) {
+      // Remove downvote
+      try {
+        await fetch(`${apiBaseUrl}/notes/${noteId}/remove-vote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: 1 }) // Use actual user ID when available
+        });
+        
+        // Update local state
+        setVotes(prev => {
+          const noteVotes = prev[noteId] || { upvotes: 0, downvotes: 0 };
+          return {
+            ...prev,
+            [noteId]: {
+              upvotes: noteVotes.upvotes,
+              downvotes: Math.max(0, noteVotes.downvotes - 1)
+            }
+          };
+        });
+        
+        setUserVotes(prev => {
+          const newUserVotes = { ...prev };
+          delete newUserVotes[noteId];
+          return newUserVotes;
+        });
+      } catch (error) {
+        console.error("Error removing vote:", error);
+      }
+      return;
+    }
+    
+    // Handle new vote or changing vote
+    try {
+      const endpoint = isUpvote ? 
+        `${apiBaseUrl}/notes/${noteId}/upvote` : 
+        `${apiBaseUrl}/notes/${noteId}/downvote`;
+      
+      await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: 1 }) // Use actual user ID when available
+      });
+      
+      // Update local state
+      setVotes(prev => {
+        const noteVotes = prev[noteId] || { upvotes: 0, downvotes: 0 };
+        
+        if (isUpvote) {
+          return {
+            ...prev,
+            [noteId]: {
+              // If changing from downvote to upvote
+              upvotes: noteVotes.upvotes + 1,
+              downvotes: currentVote === 'down' ? Math.max(0, noteVotes.downvotes - 1) : noteVotes.downvotes
+            }
+          };
+        } else {
+          return {
+            ...prev,
+            [noteId]: {
+              // If changing from upvote to downvote
+              upvotes: currentVote === 'up' ? Math.max(0, noteVotes.upvotes - 1) : noteVotes.upvotes,
+              downvotes: noteVotes.downvotes + 1
+            }
+          };
+        }
+      });
+      
+      // Update user vote
+      setUserVotes(prev => ({
+        ...prev,
+        [noteId]: isUpvote ? 'up' : 'down'
+      }));
+    } catch (error) {
+      console.error(`Error ${isUpvote ? 'upvoting' : 'downvoting'} note:`, error);
+    }
+  };
+
+  const deleteNote = async (noteId) => {
+    // Optimistically remove from UI
+    setNotes(prev => prev.filter(note => note.id !== noteId));
+    setActiveNote(null);
+    
+    // Delete from API
+    const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+    try {
+      await fetch(`${apiBaseUrl}/notes/${noteId}`, {
+        method: "DELETE"
+      });
+      
+      // Remove from votes object
+      setVotes(prev => {
+        const newVotes = { ...prev };
+        delete newVotes[noteId];
+        return newVotes;
+      });
+      
+      // Remove from user votes
+      setUserVotes(prev => {
+        const newUserVotes = { ...prev };
+        delete newUserVotes[noteId];
+        return newUserVotes;
+      });
+      
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
+  };
+
+  // Get marker size based on vote count
+  const getMarkerSize = (noteId) => {
+    const noteVotes = votes[noteId] || { upvotes: 0, downvotes: 0 };
+    const score = noteVotes.upvotes - noteVotes.downvotes;
+    if (score > 20) return 25;
+    if (score > 10) return 20;
+    if (score > 5) return 15;
+    if (score < -5) return 8;
+    return 12; // default size
+  };
+
+  // Get marker color based on vote ratio
+  const getMarkerColor = (noteId) => {
+    const noteVotes = votes[noteId] || { upvotes: 0, downvotes: 0 };
+    const total = noteVotes.upvotes + noteVotes.downvotes;
+    if (total === 0) return "area-marker-neutral";
+    
+    const upvoteRatio = noteVotes.upvotes / total;
+    if (upvoteRatio > 0.8) return "area-marker-high";
+    if (upvoteRatio > 0.5) return "area-marker-medium";
+    return "area-marker-low";
+  };
+
+  // Filter notes based on search query
+  const filteredNotes = notes.filter(note => 
+    note.text.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  setSelectedMarker(null);
-  setDrawingBoundary(null); // Exit drawing mode
-};
+  // Focus on searched note on the map
+  const focusOnNote = (noteId) => {
+    const note = notes.find(n => n.id === noteId);
+    if (note) {
+      setActiveNote(note);
+      
+      // Get the map instance
+      const mapInstance = document.querySelector('.leaflet-container')?._leaflet_map;
+      if (mapInstance) {
+        mapInstance.setView([note.lat, note.lng], 16);
+      }
+    }
+  };
 
   return (
     <div className="map-container">
+      {/* Search Box */}
+      <div className="search-container">
+        <div className="search-box">
+          <SearchIcon />
+          <input
+            type="text"
+            placeholder="Search comments..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        {searchQuery && (
+          <div className="search-results">
+            {filteredNotes.length === 0 ? (
+              <div className="no-results">No comments found</div>
+            ) : (
+              filteredNotes.map(note => (
+                <div 
+                  key={note.id}
+                  className="search-result-item"
+                  onClick={() => focusOnNote(note.id)}
+                >
+                  <div className="search-result-text">
+                    {note.text.length > 60
+                      ? note.text.substring(0, 60) + '...'
+                      : note.text}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
       <MapContainer
         center={center}
-        zoom={13}
+        zoom={15}
         style={{ height: "100vh", width: "100vw" }}
         maxBounds={bounds}
-        maxBoundsViscosity={0.5}
+        maxBoundsViscosity={0.8}
         minZoom={14}
+        zoomControl={false}
       >
+        <ZoomControl position="bottomright" />
         <MouseTracker coordsRef={coordsRef} />
-
         <UserLocation setUserPosition={setUserPosition} />
+        <ClickHandler onMapClick={handleMapClick} />
 
-        {/* Show user's location if available */}
-        {userPosition && <Marker position={userPosition} icon={userIcon} />}
-
-        {/* Draw a circle marker for smooth animation */}
+        {/* User location marker */}
         {userPosition && (
-          <CircleMarker
-            center={userPosition}
-            radius={10}
-            fillColor="blue"
-            color="white"
-            fillOpacity={0.6}
-          />
-        )}
-        {/*{markers.map((marker) => (
-          <React.Fragment key={marker.id}>
-            <Marker position={[marker.coords.lat, marker.coords.lng]}>
-              <Popup>{marker.text}</Popup>
-            </Marker>
-
-            {marker.boundary?.length > 2 && (
-              <Polygon
-                positions={marker.boundary}
-                color="blue"
-                fillOpacity={0.3}
-              />
-            )}
-          </React.Fragment>
-        ))}*/}
-
-        {/* Show live drawing */}
-        {drawingBoundary && drawingBoundary.length > 1 && (
-          <Polygon positions={drawingBoundary} color="red" fillOpacity={0.3} />
+          <>
+            <Marker position={userPosition} icon={userIcon} />
+            <CircleMarker
+              center={userPosition}
+              radius={8}
+              className="user-location"
+              pathOptions={{
+                fillColor: "#4285F4",
+                color: "white",
+                weight: 2,
+                fillOpacity: 0.7
+              }}
+            />
+            <CircleMarker
+              center={userPosition}
+              radius={15}
+              className="user-location-pulse"
+              pathOptions={{
+                fillColor: "transparent",
+                color: "#4285F4",
+                weight: 1,
+                fillOpacity: 0.2
+              }}
+            />
+          </>
         )}
 
-        {/* Finish button (Only visible when drawing) */}
-        {drawingBoundary && drawingBoundary.length > 2 && (
-          <button onClick={handleFinishDrawing} style={{ position: "absolute", top: 10, left: 10, zIndex: 1000 }}>
-            Finish Boundary
-          </button>
-        )}
+        {/* Note markers with permanently visible comments */}
+        {notes.map(note => {
+          const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
+          const isHighlighted = activeNote && activeNote.id === note.id;
+          
+          return (
+            <CircleMarker
+              key={note.id}
+              center={[note.lat, note.lng]}
+              radius={getMarkerSize(note.id)}
+              className={`area-marker ${getMarkerColor(note.id)} ${isHighlighted ? 'highlighted' : ''}`}
+              eventHandlers={{
+                click: () => setActiveNote(note)
+              }}
+            >
+              {/* Always visible tooltip with vote actions */}
+              <Tooltip 
+                direction="top" 
+                offset={[0, -10]} 
+                opacity={1.0}
+                permanent={true}
+                className="permanent-comment-box"
+              >
+                <div className="permanent-comment">
+                  <div className="comment-text">
+                    {note.text.length > 40 
+                      ? `${note.text.substring(0, 40)}...` 
+                      : note.text}
+                  </div>
+                  
+                  <div className="comment-vote-actions">
+                    <button 
+                      className={`vote-action upvote ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation(); 
+                        handleVote(note.id, true);
+                      }}
+                    >
+                      <UpvoteIcon /> <span>{noteVotes.upvotes}</span>
+                    </button>
+                    <button 
+                      className={`vote-action downvote ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation(); 
+                        handleVote(note.id, false);
+                      }}
+                    >
+                      <DownvoteIcon /> <span>{noteVotes.downvotes}</span>
+                    </button>
+                  </div>
+                </div>
+              </Tooltip>
+              
+              {/* Popup for expanded view */}
+              {activeNote && activeNote.id === note.id && (
+                <Popup
+                  className="custom-popup"
+                  onClose={() => setActiveNote(null)}
+                >
+                  <div className="popup-content">
+                    <p>{note.text}</p>
+                    <div className="popup-actions">
+                      <div 
+                        className={`vote-btn upvote-btn ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                        onClick={() => handleVote(note.id, true)}
+                      >
+                        <UpvoteIcon /> {noteVotes.upvotes}
+                      </div>
+                      <div 
+                        className={`vote-btn downvote-btn ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                        onClick={() => handleVote(note.id, false)}
+                      >
+                        <DownvoteIcon /> {noteVotes.downvotes}
+                      </div>
+                      <div 
+                        className="vote-btn delete-btn"
+                        onClick={() => deleteNote(note.id)}
+                        style={{ marginLeft: 'auto', color: '#d32f2f' }}
+                      >
+                        <CloseIcon />
+                      </div>
+                    </div>
+                  </div>
+                </Popup>
+              )}
+            </CircleMarker>
+          );
+        })}
 
-        {/* Render Text Labels */}
+        {/* Building labels */}
         <TextLabels mapLabels={mapLabels} />
-        <AddText
-          ref={addTextRef}
-          markers={markers}
-          setMarkers={setMarkers}
-          setSelectedMarker={setSelectedMarker}
-          userPosition={userPosition}
-          selectedMarker = {selectedMarker}
-          drawingBoundary={drawingBoundary}
-          setDrawingBoundary={setDrawingBoundary}
-        />
         {StaticMapElements()}
       </MapContainer>
 
-      <TextSettingsPanel
-        selectedMarker={selectedMarker}
-        setSelectedMarker={setSelectedMarker}
-        updateMarkerSettings={updateMarkerSettings}
-      />
+      {/* Notes List Panel */}
+      <div className={`comments-panel ${showNotesList ? 'open' : ''}`}>
+        <div className="comments-header">
+          <h2>Campus Notes</h2>
+          <button className="close-btn" onClick={() => setShowNotesList(false)}>
+            <CloseIcon />
+          </button>
+        </div>
+        
+        <div className="comments-list">
+          {notes.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#777' }}>
+              No notes yet. Click on the map to add the first note!
+            </div>
+          ) : (
+            notes
+              .sort((a, b) => {
+                const aScore = (votes[a.id]?.upvotes || 0) - (votes[a.id]?.downvotes || 0);
+                const bScore = (votes[b.id]?.upvotes || 0) - (votes[b.id]?.downvotes || 0);
+                return bScore - aScore;
+              })
+              .map(note => {
+                const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
+                return (
+                  <div key={note.id} className="comment-item">
+                    <div className="comment-meta">
+                      <span className="comment-location">
+                        {new Date(note.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="comment-content">
+                      {note.text}
+                    </div>
+                    <div className="comment-actions">
+                      <button 
+                        className={`vote-btn upvote-btn ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                        onClick={() => handleVote(note.id, true)}
+                      >
+                        <UpvoteIcon /> {noteVotes.upvotes}
+                      </button>
+                      <button 
+                        className={`vote-btn downvote-btn ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                        onClick={() => handleVote(note.id, false)}
+                      >
+                        <DownvoteIcon /> {noteVotes.downvotes}
+                      </button>
+                      <button 
+                        className="vote-btn"
+                        onClick={() => deleteNote(note.id)}
+                        style={{ marginLeft: 'auto', color: '#d32f2f' }}
+                      >
+                        <CloseIcon />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+          )}
+        </div>
+      </div>
 
-      <CoordinatesDisplay coords={throttleCoords} />
-
-      {userPosition && (
-        <button 
-          className="add-text-button"
-          onClick={handleAddTextAtLocation}
-        >
-          Add Text at Your Location
-        </button>
+      {/* Note Form */}
+      {showNoteForm && (
+        <div className="comment-form">
+          <h3>Add Your Note</h3>
+          <textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            placeholder="What would you like to share about this area?"
+            className="note-textarea"
+          />
+          <div className="comment-form-actions">
+            <button 
+              className="cancel-btn"
+              onClick={() => {
+                setShowNoteForm(false);
+                setNoteText("");
+              }}
+            >
+              Cancel
+            </button>
+            <button 
+              className="submit-btn"
+              onClick={submitNote}
+              disabled={!noteText.trim()}
+            >
+              Post Note
+            </button>
+          </div>
+        </div>
       )}
+
+      {/* Comments toggle button */}
+      <button 
+        className="comments-toggle" 
+        onClick={() => setShowNotesList(!showNotesList)}
+      >
+        <CommentIcon />
+        {showNotesList ? 'Hide Notes' : 'View All Notes'}
+      </button>
+
+      {/* Map legend */}
+      <div className="map-legend">
+        <div className="legend-title">Note Colors:</div>
+        <div className="legend-item">
+          <div className="legend-color legend-high"></div>
+          <span>Popular Notes</span>
+        </div>
+        <div className="legend-item">
+          <div className="legend-color legend-medium"></div>
+          <span>Mixed Opinions</span>
+        </div>
+        <div className="legend-item">
+          <div className="legend-color legend-low"></div>
+          <span>Unpopular Notes</span>
+        </div>
+        <div className="legend-item">
+          <div className="legend-color legend-neutral"></div>
+          <span>New Notes</span>
+        </div>
+      </div>
+
+      {/* Coordinates Display */}
+      <CoordinatesDisplay coords={throttleCoords} />
     </div>
   );
 };

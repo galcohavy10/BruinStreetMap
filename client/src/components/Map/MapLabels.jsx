@@ -2,7 +2,7 @@ import React from "react";
 import { Marker } from "react-leaflet";
 import L from "leaflet";
 
-// Bounding box (adjust for your map)
+// Bounding box for UCLA campus area
 const bounds = [
   [34.0545, -118.456], // Southwest
   [34.0801, -118.4353], // Northeast
@@ -20,37 +20,70 @@ const isWithinBounds = (coords, bounds) => {
 };
 
 // Function to generate a text marker inside the bounding box
-const addTextToMap = (coords, text) => {
+const createMapLabel = (coords, text) => {
   if (!isWithinBounds(coords, bounds)) return null;
 
-  // Create a DivIcon with the text
+  // Create a DivIcon with the text and styled appearance
   const textIcon = L.divIcon({
-    className: "custom-text-marker",
-    html: `<div style="
-      font-size: 20px;
-      font-weight: 1000;
-      text-align: center;
-      -webkit-text-stroke: .5px black; /* Creates a 1px black stroke */
-    ">${text}</div>`,
-    //      text-shadow: 2px 2px 2px black; /* Adds a black shadow */
-    iconSize: [100, 30],
-    iconAnchor: [50, 15],
+    className: "map-label",
+    html: `
+      <div class="map-label-content">
+        <div class="map-label-text">${text}</div>
+      </div>
+    `,
+    iconSize: [120, 40],
+    iconAnchor: [60, 20],
   });
 
   return <Marker position={coords} icon={textIcon} />;
 };
 
-// Component to Render Text Labels on the Map
+// Component to Render Campus Building Labels on the Map
 const TextLabels = ({ mapLabels }) => {
   return (
     <>
+      <style jsx global>{`
+        .map-label {
+          pointer-events: none;
+        }
+        
+        .map-label-content {
+          background: rgba(58, 97, 134, 0.85);
+          color: white;
+          padding: 5px 10px;
+          border-radius: 6px;
+          font-weight: 500;
+          font-size: 14px;
+          text-align: center;
+          white-space: nowrap;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          backdrop-filter: blur(2px);
+          transform: translateY(-5px);
+          position: relative;
+        }
+        
+        .map-label-content:after {
+          content: '';
+          position: absolute;
+          bottom: -5px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 6px solid rgba(58, 97, 134, 0.85);
+        }
+      `}</style>
+    
       {mapLabels.map(
         ({ coords, text }, index) =>
-          addTextToMap(coords, text) && (
+          createMapLabel(coords, text) && (
             <Marker
               key={index}
               position={coords}
-              icon={addTextToMap(coords, text).props.icon}
+              icon={createMapLabel(coords, text).props.icon}
             />
           )
       )}

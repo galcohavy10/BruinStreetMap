@@ -1,22 +1,40 @@
-/* client/src/components/UI/TextSettingsPanel.css */
+/* TextSettingsPanel.css - Modern UI styling */
 .text-settings-panel {
   position: fixed;
   bottom: 30px;
   right: 30px;
-  background: #fff;
-  padding: 20px 30px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  width: 300px;
-  font-family: Arial, sans-serif;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+  width: 330px;
+  max-width: 90vw;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
   z-index: 1000;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(200, 200, 200, 0.5);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .text-settings-panel h2 {
-  margin: 0 0 15px;
-  font-size: 1.5em;
-  color: #333;
+  margin: 0 0 20px;
+  font-size: 1.5rem;
+  color: #3a6186;
   text-align: center;
+  letter-spacing: -0.5px;
+  font-weight: 600;
 }
 
 .text-settings-panel .section {
@@ -26,47 +44,138 @@
 .text-settings-panel .section label {
   display: block;
   margin-bottom: 8px;
-  font-weight: bold;
+  font-weight: 500;
   color: #444;
+  font-size: 0.9rem;
 }
 
 .text-settings-panel textarea {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
   resize: vertical;
-  font-size: 1em;
+  font-size: 0.95rem;
   font-family: inherit;
+  min-height: 80px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.text-settings-panel textarea:focus {
+  border-color: #3a6186;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(58, 97, 134, 0.2);
+}
+
+.text-settings-panel .color-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.color-option {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.color-option.selected {
+  border-color: #3a6186;
+  transform: scale(1.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+}
+
+.font-size-options {
+  margin-top: 10px;
+}
+
+.font-size-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: white;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 15px;
+}
+
+.font-size-select:focus {
+  border-color: #3a6186;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(58, 97, 134, 0.2);
 }
 
 .text-settings-panel .actions {
   display: flex;
   justify-content: space-between;
+  margin-top: 20px;
 }
 
 .text-settings-panel button {
-  padding: 10px 20px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 6px;
-  font-size: 1em;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .text-settings-panel .save-btn {
-  background-color: #007bff;
-  color: #fff;
+  background-color: #3a6186;
+  color: white;
+  flex-grow: 1;
+  margin-right: 10px;
 }
 
 .text-settings-panel .save-btn:hover {
-  background-color: #0056b3;
+  background-color: #4a7196;
 }
 
 .text-settings-panel .cancel-btn {
-  background-color: #ccc;
-  color: #333;
+  background-color: #f1f1f1;
+  color: #666;
 }
 
 .text-settings-panel .cancel-btn:hover {
-  background-color: #aaa;
+  background-color: #e1e1e1;
+}
+
+.text-settings-panel .delete-btn {
+  background-color: rgba(244, 67, 54, 0.8);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 15px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.text-settings-panel .delete-btn:hover {
+  background-color: #d32f2f;
+}
+
+.text-settings-panel .delete-btn svg {
+  width: 16px;
+  height: 16px;
 }

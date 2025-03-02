@@ -30,26 +30,37 @@ CREATE TABLE IF NOT EXISTS comments (
     FOREIGN KEY (parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS notes (
+    id SERIAL PRIMARY KEY,
+    lat DECIMAL(9,6) NOT NULL,
+    lng DECIMAL(9,6) NOT NULL,
+    text TEXT DEFAULT '',
+    color VARCHAR(7) DEFAULT '#000000',
+    font_size VARCHAR(10) DEFAULT '20px',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS votes (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
-    post_id INT NULL,  -- Either post_id OR comment_id is used
+    post_id INT NULL,  -- Either post_id OR comment_id OR note_id is used
     comment_id INT NULL,
+    note_id INT NULL,  -- Added note_id column
     upvote BOOLEAN DEFAULT FALSE,  -- Tracks if user upvoted
     downvote BOOLEAN DEFAULT FALSE,  -- Tracks if user downvoted
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
     FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+    FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,  -- Added foreign key for notes
     CHECK (
-        (post_id IS NOT NULL AND comment_id IS NULL)  -- Either post or comment must be set
-        OR (post_id IS NULL AND comment_id IS NOT NULL)
+        (post_id IS NOT NULL AND comment_id IS NULL AND note_id IS NULL)
+        OR (post_id IS NULL AND comment_id IS NOT NULL AND note_id IS NULL)
+        OR (post_id IS NULL AND comment_id IS NULL AND note_id IS NOT NULL)
     ),
     CHECK (
         NOT (upvote = TRUE AND downvote = TRUE)  -- Prevent upvote & downvote at the same time
-    ),
-    CONSTRAINT unique_user_post_vote UNIQUE (user_id, post_id),
-    CONSTRAINT unique_user_comment_vote UNIQUE (user_id, comment_id)
+    )
 );
 
 -- Ensure a user can only upvote OR downvote a post once
@@ -62,6 +73,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_comment_vote
 ON votes(user_id, comment_id) 
 WHERE comment_id IS NOT NULL;
 
+-- Ensure a user can only upvote OR downvote a note once
+CREATE UNIQUE INDEX IF NOT EXISTS unique_note_vote 
+ON votes(user_id, note_id) 
+WHERE note_id IS NOT NULL;
+
 -- Optimize queries for filtering and foreign key lookups
 CREATE INDEX IF NOT EXISTS idx_users_major ON users(major);
 CREATE INDEX IF NOT EXISTS idx_users_clubs ON users USING GIN(clubs); -- Optimized for array filtering
@@ -70,3 +86,4 @@ CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_comments_parent_comment_id ON comments(parent_comment_id);
 CREATE INDEX IF NOT EXISTS idx_votes_post_id ON votes(post_id);
 CREATE INDEX IF NOT EXISTS idx_votes_comment_id ON votes(comment_id);
+CREATE INDEX IF NOT EXISTS idx_votes_note_id ON votes(note_id);

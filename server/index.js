@@ -378,4 +378,181 @@ if (process.env.NODE_ENV !== "test") {
   });
 }
 
+// First, create the notes table if it doesn't exist
+app.use(async (req, res, next) => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notes (
+        id SERIAL PRIMARY KEY,
+        lat DECIMAL(9,6) NOT NULL,
+        lng DECIMAL(9,6) NOT NULL,
+        text TEXT DEFAULT '',
+        color VARCHAR(7) DEFAULT '#000000',
+        font_size VARCHAR(10) DEFAULT '20px',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    next();
+  } catch (error) {
+    console.error("Error creating notes table:", error);
+    next();
+  }
+});
+
+// Get all notes
+app.get("/notes", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM notes");
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+    res.status(500).json({ error: "Error fetching notes" });
+  }
+});
+
+// Create a new note
+app.post("/notes", async (req, res) => {
+  const { lat, lng, text, color, fontSize } = req.body;
+  
+  try {
+    const result = await pool.query(
+      `INSERT INTO notes (lat, lng, text, color, font_size) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [lat, lng, text, color, fontSize]
+    );
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Error creating note:", error);
+    res.status(500).json({ error: "Error creating note" });
+  }
+});
+
+// Update a note
+app.put("/notes/:id", async (req, res) => {
+  const { id } = req.params;
+  const { text, color, fontSize } = req.body;
+  
+  try {
+    const result = await pool.query(
+      `UPDATE notes SET 
+       text = COALESCE($1, text),
+       color = COALESCE($2, color),
+       font_size = COALESCE($3, font_size)
+       WHERE id = $4 RETURNING *`,
+      [text, color, fontSize, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error updating note:", error);
+    res.status(500).json({ error: "Error updating note" });
+  }
+});
+
+// Delete a note
+app.delete("/notes/:id", async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const result = await pool.query("DELETE FROM notes WHERE id = $1", [id]);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+    
+    res.json({ message: "Note deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting note:", error);
+    res.status(500).json({ error: "Error deleting note" });
+  }
+});
+
+
+// Add these endpoints to your server's index.js file
+
+// Get votes for a note
+app.get("/notes/:id/votes", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE upvote = TRUE) AS upvotes,
+        COUNT(*) FILTER (WHERE downvote = TRUE) AS downvotes
+      FROM votes WHERE note_id = $1`,
+      [id]
+    );
+
+    res.json(result.rows[0] || { upvotes: "0", downvotes: "0" });
+  } catch (error) {
+    console.error("Error fetching note votes:", error);
+    res.status(500).json({ error: "Error fetching votes" });
+  }
+});
+
+// Upvote a note
+app.post("/notes/:id/upvote", async (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO votes (user_id, note_id, upvote, downvote)
+       VALUES ($1, $2, TRUE, FALSE)
+       ON CONFLICT (user_id, note_id) 
+       DO UPDATE SET upvote = TRUE, downvote = FALSE`,
+      [user_id, id]
+    );
+
+    res.json({ message: "Note upvoted successfully!" });
+  } catch (error) {
+    console.error("Error upvoting note:", error);
+    res.status(500).json({ error: "Error upvoting note" });
+  }
+});
+
+// Downvote a note
+app.post("/notes/:id/downvote", async (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  try {
+    await pool.query(
+      `INSERT INTO votes (user_id, note_id, upvote, downvote)
+       VALUES ($1, $2, FALSE, TRUE)
+       ON CONFLICT (user_id, note_id) 
+       DO UPDATE SET upvote = FALSE, downvote = TRUE`,
+      [user_id, id]
+    );
+
+    res.json({ message: "Note downvoted successfully!" });
+  } catch (error) {
+    console.error("Error downvoting note:", error);
+    res.status(500).json({ error: "Error downvoting note" });
+  }
+});
+
+// Remove vote from a note
+app.post("/notes/:id/remove-vote", async (req, res) => {
+  const { id } = req.params;
+  const { user_id } = req.body;
+
+  try {
+    await pool.query(
+      `DELETE FROM votes WHERE user_id = $1 AND note_id = $2`,
+      [user_id, id]
+    );
+
+    res.json({ message: "Vote removed successfully!" });
+  } catch (error) {
+    console.error("Error removing vote:", error);
+    res.status(500).json({ error: "Error removing vote" });
+  }
+});
+
 module.exports = app;

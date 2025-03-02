@@ -1,8 +1,16 @@
+import React from 'react';
+
 const CoordinatesDisplay = ({ coords }) => {
+  if (!coords) return null;
+  
   return (
-    <div>
-      <b>Latitude</b>: {coords?.lat?.toFixed(4) || "N/A"} <br />
-      <b>Longitude</b>: {coords?.lng?.toFixed(4) || "N/A"}
+    <div className="coordinates-display">
+      <div>
+        <b>Lat:</b> {coords.lat?.toFixed(5)}
+      </div>
+      <div>
+        <b>Lng:</b> {coords.lng?.toFixed(5)}
+      </div>
     </div>
   );
 };
