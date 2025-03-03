@@ -17,6 +17,8 @@ import CoordinatesDisplay from "../UI/CoordinatesDisplay";
 import TextLabels from "./MapLabels";
 import StaticMapElements, { bounds } from "./StaticMapElements";
 import "./map.css";
+import * as turf from '@turf/turf';
+
 
 // Center of UCLA campus
 const center = [
@@ -101,6 +103,9 @@ const LeafletMap = () => {
   const [votes, setVotes] = useState({});
   // Track user votes to prevent multiple voting
   const [userVotes, setUserVotes] = useState({});
+  
+  // Handle hovering over a polygon
+  const [hovered, setHovered] = useState(null);
   
   // Throttled coordinate updates
   useEffect(() => {
@@ -449,6 +454,29 @@ useEffect(() => {
     }
   };
 
+  // Handle hover and click for polygon bounds of notes
+  const polygonEventHandlers = (note) => ({
+    mouseover: () => {
+      console.log("Hovering over", note.text);
+      setHovered(note.id);
+    },
+    mouseout: () => setHovered(null)
+  });
+
+  // Helper to convert Leaflet [lat, lng] to Turf [lng, lat]
+  const toTurfCoords = (coords) => {
+    coords.map(c => [c[1], c[0]]);
+    coords = [...coords, coords[0]];
+    return coords;
+  };
+  
+  // Helper to convert Turf [lng, lat] back to Leaflet [lat, lng]
+  const toLeafletCoords = (coords) => {
+    coords.map(c => [c[1], c[0]]);
+    coords = coords.slice(0, coords.length - 1);
+    return coords;
+  };
+
   return (
     <div className="map-container">
       {/* Search Box */}
@@ -533,13 +561,128 @@ useEffect(() => {
         )}
 
         {/* Note markers with permanently visible comments */}
-        {notes.map(note => {
+        {notes.sort((a, b) => {
+          const a_id = a.id;
+          const b_id = b.id;
+          //console.log(votes[a_id], votes[b_id]);
+          //console.log(votes);
+          try{
+            console.log("Comparing by upvotes")
+            return -(votes[a_id].upvotes - votes[a_id].downvotes - (votes[b_id].upvotes - votes[b_id].downvotes));
+          }
+          catch{
+            console.log("Upvotes or downvotes not working")
+            return -1;
+          }
+          
+        }).map((note, index, arr) => {
           const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
           const isHighlighted = activeNote && activeNote.id === note.id;
+          let coords = note.bounds;
+          if(note.bounds.length > 2 && index > 0){
+            const prev_notes = arr.slice(0, index);
+            console.log("Note bounds polygon ", toTurfCoords(note.bounds))
+            let cur_turf = turf.polygon([toTurfCoords(note.bounds)]);
+            for (let i = 0; i < prev_notes.length; i++){
+              let prev_note = prev_notes[i];
+              console.log("Previous note polygon ", toTurfCoords(prev_note.bounds))
+              let prev_turf = turf.polygon([toTurfCoords(prev_note.bounds)]);
+              console.log('Current Turf Polygon:', cur_turf);
+              console.log('Previous Turf Polygon:', prev_turf);
+              //console.log("Difference: ", turf.difference(cur_turf, prev_turf));
+              if (cur_turf !== null){
+                cur_turf = turf.difference(turf.featureCollection([cur_turf, prev_turf]));
+              }
+              console.log("cur_turf after difference: ", cur_turf);
+            }
+            if (cur_turf !== null && cur_turf.geometry !== null && cur_turf.coordinates !== null){
+              coords = toLeafletCoords(cur_turf.geometry.coordinates[0]);
+            }
+            else{
+              coords = null;
+            }
+            console.log("Coords to display in Polygon: ", coords);
+          }
           /* Render bounds if selected, or else a circle marker*/
           return (
             <>
-            {note.bounds.length > 2 ? <Polygon positions={note.bounds} color="red" fillOpacity={0.3} /> : 
+            {note.bounds.length > 2 ? <> 
+            {!coords ? null : <Polygon positions={coords} color="red" fillOpacity={0.3} eventHandlers={polygonEventHandlers(note)}> 
+              {hovered === note.id ?  
+              <>
+              <Tooltip 
+                  direction="top" 
+                  offset={[0, -10]} 
+                  opacity={1.0}
+                  permanent={true}
+                  className="permanent-comment-box"
+                >
+                  <div className="permanent-comment">
+                    <div className="comment-text">
+                      {note.text.length > 40 
+                        ? `${note.text.substring(0, 40)}...` 
+                        : note.text}
+                    </div>
+                    
+                    <div className="comment-vote-actions">
+                      <button 
+                        className={`vote-action upvote ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          handleVote(note.id, true);
+                        }}
+                      >
+                        <UpvoteIcon /> <span>{noteVotes.upvotes}</span>
+                      </button>
+                      <button 
+                        className={`vote-action downvote ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          handleVote(note.id, false);
+                        }}
+                      >
+                        <DownvoteIcon /> <span>{noteVotes.downvotes}</span>
+                      </button>
+                    </div>
+                  </div>
+                </Tooltip>
+                
+                {/* Popup for expanded view */}
+                {activeNote && activeNote.id === note.id && (
+                  <Popup
+                    className="custom-popup"
+                    onClose={() => setActiveNote(null)}
+                  >
+                    <div className="popup-content">
+                      <p>{note.text}</p>
+                      <div className="popup-actions">
+                        <div 
+                          className={`vote-btn upvote-btn ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                          onClick={() => handleVote(note.id, true)}
+                        >
+                          <UpvoteIcon /> {noteVotes.upvotes}
+                        </div>
+                        <div 
+                          className={`vote-btn downvote-btn ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                          onClick={() => handleVote(note.id, false)}
+                        >
+                          <DownvoteIcon /> {noteVotes.downvotes}
+                        </div>
+                        <div 
+                          className="vote-btn delete-btn"
+                          onClick={() => deleteNote(note.id)}
+                          style={{ marginLeft: 'auto', color: '#d32f2f' }}
+                        >
+                          <CloseIcon />
+                        </div>
+                      </div>
+                    </div>
+                  </Popup>
+                )}
+              </>: null}
+            </Polygon>
+            } </>
+            : 
             <CircleMarker
               key={note.id}
               center={[note.lat, note.lng]}
@@ -707,6 +850,7 @@ useEffect(() => {
               onClick={() => {
                 setShowNoteForm(false);
                 setNoteText("");
+                setDrawingBoundary([]);
               }}
             >
               Cancel
