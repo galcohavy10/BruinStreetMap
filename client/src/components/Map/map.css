@@ -280,7 +280,22 @@
   border: none;
   cursor: pointer;
   color: #777;
-  font-size: 24px;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.comments-header .close-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.comments-header .close-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
 .comments-list {
