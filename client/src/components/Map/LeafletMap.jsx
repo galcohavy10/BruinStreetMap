@@ -585,6 +585,9 @@ useEffect(() => {
             let cur_turf = turf.polygon([toTurfCoords(note.bounds)]);
             for (let i = 0; i < prev_notes.length; i++){
               let prev_note = prev_notes[i];
+              if (prev_note.bounds.length < 3){
+                continue;
+              }
               console.log("Previous note polygon ", toTurfCoords(prev_note.bounds))
               let prev_turf = turf.polygon([toTurfCoords(prev_note.bounds)]);
               console.log('Current Turf Polygon:', cur_turf);
