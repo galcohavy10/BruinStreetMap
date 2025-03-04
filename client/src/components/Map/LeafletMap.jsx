@@ -106,6 +106,8 @@ const LeafletMap = () => {
   
   // Handle hovering over a polygon
   const [hovered, setHovered] = useState(null);
+
+  // Handle 
   
   // Throttled coordinate updates
   useEffect(() => {
@@ -477,6 +479,103 @@ useEffect(() => {
     return coords;
   };
 
+  //Render Multipolygon components
+  const MultiPolygonComponent = ({ multiPoly, note, noteVotes }) => {
+    // Convert a [lng, lat] coordinate pair to [lat, lng]
+    //const convertCoord = coord => [coord[1], coord[0]];
+  
+    // Extract and convert outer rings for each polygon
+    const leafletPolygons = multiPoly.coordinates.map((polygon, idx) => {
+      // polygon is an array of rings. Typically, the first ring is the outer ring.
+      console.log("polygon parameter", polygon)
+      const outerRing = polygon.map(toLeafletCoords);
+      console.log("outer ring ", outerRing)
+      return outerRing;
+    });
+
+    console.log("Leaflet polygons to display ", leafletPolygons);
+  
+    return (
+      <>
+        {leafletPolygons.map((positions, index) => (
+          <Polygon positions={positions} color="red" fillOpacity={0.3} eventHandlers={polygonEventHandlers(note)}>
+            {hovered === note.id ?  
+              <>
+              <Tooltip 
+                  direction="top" 
+                  offset={[0, -10]} 
+                  opacity={1.0}
+                  permanent={true}
+                  className="permanent-comment-box"
+                >
+                  <div className="permanent-comment">
+                    <div className="comment-text">
+                      {note.text.length > 40 
+                        ? `${note.text.substring(0, 40)}...` 
+                        : note.text}
+                    </div>
+                    
+                    <div className="comment-vote-actions">
+                      <button 
+                        className={`vote-action upvote ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          handleVote(note.id, true);
+                        }}
+                      >
+                        <UpvoteIcon /> <span>{noteVotes.upvotes}</span>
+                      </button>
+                      <button 
+                        className={`vote-action downvote ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          handleVote(note.id, false);
+                        }}
+                      >
+                        <DownvoteIcon /> <span>{noteVotes.downvotes}</span>
+                      </button>
+                    </div>
+                  </div>
+                </Tooltip>
+                
+                {/* Popup for expanded view */}
+                {activeNote && activeNote.id === note.id && (
+                  <Popup
+                    className="custom-popup"
+                    onClose={() => setActiveNote(null)}
+                  >
+                    <div className="popup-content">
+                      <p>{note.text}</p>
+                      <div className="popup-actions">
+                        <div 
+                          className={`vote-btn upvote-btn ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                          onClick={() => handleVote(note.id, true)}
+                        >
+                          <UpvoteIcon /> {noteVotes.upvotes}
+                        </div>
+                        <div 
+                          className={`vote-btn downvote-btn ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                          onClick={() => handleVote(note.id, false)}
+                        >
+                          <DownvoteIcon /> {noteVotes.downvotes}
+                        </div>
+                        <div 
+                          className="vote-btn delete-btn"
+                          onClick={() => deleteNote(note.id)}
+                          style={{ marginLeft: 'auto', color: '#d32f2f' }}
+                        >
+                          <CloseIcon />
+                        </div>
+                      </div>
+                    </div>
+                  </Popup>
+                )}
+              </>: null}
+          </Polygon>
+        ))}
+      </>
+    );
+  };
   return (
     <div className="map-container">
       {/* Search Box */}
@@ -579,6 +678,7 @@ useEffect(() => {
           const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
           const isHighlighted = activeNote && activeNote.id === note.id;
           let coords = note.bounds;
+          let multipolygon = false;
           if(note.bounds.length > 2 && index > 0){
             const prev_notes = arr.slice(0, index);
             console.log("Note bounds polygon ", toTurfCoords(note.bounds))
@@ -598,10 +698,17 @@ useEffect(() => {
               }
               console.log("cur_turf after difference: ", cur_turf);
             }
-            if (cur_turf !== null && cur_turf.geometry !== null && cur_turf.coordinates !== null){
+            if (cur_turf !== null && cur_turf.geometry !== null && cur_turf.geometry.type === "MultiPolygon"){
+              console.log("Current polygon is a multi-poly");
+              multipolygon = true;
+              coords = cur_turf.geometry;
+            }
+            else if (cur_turf !== null && cur_turf.geometry !== null && cur_turf.coordinates !== null){
+              console.log("Coordinates being converted: ", cur_turf.geometry.coordinates[0])
               coords = toLeafletCoords(cur_turf.geometry.coordinates[0]);
             }
             else{
+              console.log("Coords are null");;
               coords = null;
             }
             console.log("Coords to display in Polygon: ", coords);
@@ -610,7 +717,12 @@ useEffect(() => {
           return (
             <>
             {note.bounds.length > 2 ? <> 
-            {!coords ? null : <Polygon positions={coords} color="red" fillOpacity={0.3} eventHandlers={polygonEventHandlers(note)}> 
+            {!coords ? null : 
+            <>
+            {multipolygon ? 
+              <MultiPolygonComponent multiPoly={coords} note={note} noteVotes={noteVotes}/> 
+            : 
+            <Polygon positions={coords} color="red" fillOpacity={0.3} eventHandlers={polygonEventHandlers(note)}> 
               {hovered === note.id ?  
               <>
               <Tooltip 
@@ -684,6 +796,7 @@ useEffect(() => {
                 )}
               </>: null}
             </Polygon>
+            } </>
             } </>
             : 
             <CircleMarker
