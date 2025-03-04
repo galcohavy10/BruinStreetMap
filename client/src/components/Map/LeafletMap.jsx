@@ -722,10 +722,8 @@ useEffect(() => {
               {hovered === note.id ?  
               <>
               <Tooltip 
-                  direction="top" 
-                  offset={[0, -10]} 
-                  opacity={1.0}
-                  permanent={true}
+                  sticky = {true}
+                  permanent = {true}
                   className="permanent-comment-box"
                 >
                   <div className="permanent-comment">
