@@ -19,9 +19,11 @@ const AddText = forwardRef(({
   }));
   
   const addMarkerAtPosition = async (position) => {
-    // Create a temporary marker with unique ID
+    // Create a temporary marker with unique ID and timestamp
+    const tempTimestamp = Date.now();
     const newMarker = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${tempTimestamp}`,
+      tempTimestamp, // Added this field for optimistic updates
       coords: position,
       text: "",
       color: "#000000",
@@ -58,7 +60,7 @@ const AddText = forwardRef(({
       // Replace the temporary marker with the one returned by the backend
       setMarkers((prevMarkers) =>
         prevMarkers.map((marker) =>
-          marker.id === newMarker.id
+          marker.tempTimestamp === newMarker.tempTimestamp
             ? { ...marker, id: savedNote.id }
             : marker
         )
