@@ -460,7 +460,7 @@ useEffect(() => {
   const polygonEventHandlers = (note) => ({
     mouseover: () => {
       console.log("Hovering over", note.text);
-      setHovered(note.id);
+      setHovered((prev) => (prev !== note.id ? note.id : prev));
     },
     mouseout: () => setHovered(null)
   });
@@ -503,7 +503,7 @@ useEffect(() => {
               <>
               <Tooltip 
                   direction="top" 
-                  offset={[0, -10]} 
+                  offset={[0, 10]} 
                   opacity={1.0}
                   permanent={true}
                   className="permanent-comment-box"
@@ -678,7 +678,6 @@ useEffect(() => {
           const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
           const isHighlighted = activeNote && activeNote.id === note.id;
           let coords = note.bounds;
-          let multipolygon = false;
           if(note.bounds.length > 2 && index > 0){
             const prev_notes = arr.slice(0, index);
             console.log("Note bounds polygon ", toTurfCoords(note.bounds))
@@ -700,8 +699,9 @@ useEffect(() => {
             }
             if (cur_turf !== null && cur_turf.geometry !== null && cur_turf.geometry.type === "MultiPolygon"){
               console.log("Current polygon is a multi-poly");
-              multipolygon = true;
-              coords = cur_turf.geometry;
+              //multipolygon = true;
+              //coords = cur_turf.geometry;
+              coords = cur_turf.geometry.coordinates;
             }
             else if (cur_turf !== null && cur_turf.geometry !== null && cur_turf.coordinates !== null){
               console.log("Coordinates being converted: ", cur_turf.geometry.coordinates[0])
@@ -718,10 +718,6 @@ useEffect(() => {
             <>
             {note.bounds.length > 2 ? <> 
             {!coords ? null : 
-            <>
-            {multipolygon ? 
-              <MultiPolygonComponent multiPoly={coords} note={note} noteVotes={noteVotes}/> 
-            : 
             <Polygon positions={coords} color="red" fillOpacity={0.3} eventHandlers={polygonEventHandlers(note)}> 
               {hovered === note.id ?  
               <>
@@ -796,7 +792,6 @@ useEffect(() => {
                 )}
               </>: null}
             </Polygon>
-            } </>
             } </>
             : 
             <CircleMarker
