@@ -678,7 +678,7 @@ useEffect(() => {
           const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
           const isHighlighted = activeNote && activeNote.id === note.id;
           let coords = note.bounds;
-          if(note.bounds.length > 2 && index > 0){
+          if(note.bounds.length > 2){
             const prev_notes = arr.slice(0, index);
             console.log("Note bounds polygon ", toTurfCoords(note.bounds))
             let cur_turf = turf.polygon([toTurfCoords(note.bounds)]);
@@ -796,17 +796,24 @@ useEffect(() => {
               key={note.id}
               center={[note.lat, note.lng]}
               radius={getMarkerSize(note.id)}
-              className={`area-marker ${getMarkerColor(note.id)} ${isHighlighted ? 'highlighted' : ''}`}
+              /*className={`area-marker ${getMarkerColor(note.id)} ${isHighlighted ? 'highlighted' : ''}`}
               eventHandlers={{
                 click: () => setActiveNote(note)
-              }}
+              }}*/
+              color="red"
+              eventHandlers = {polygonEventHandlers(note)} 
             >
-              {/* Always visible tooltip with vote actions */}
+              {/* Show tooltip if hovering */}
+              {hovered === note.id ? 
+              <>
               <Tooltip 
-                direction="top" 
+                /*direction="top" 
                 offset={[0, -10]} 
                 opacity={1.0}
                 permanent={true}
+                className="permanent-comment-box"*/
+                sticky = {true}
+                permanent = {true}
                 className="permanent-comment-box"
               >
                 <div className="permanent-comment">
@@ -871,6 +878,9 @@ useEffect(() => {
                   </div>
                 </Popup>
               )}
+              </>
+              : null}
+              
             </CircleMarker>
             }
           </>
