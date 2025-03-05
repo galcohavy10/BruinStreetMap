@@ -107,7 +107,8 @@ const LeafletMap = () => {
   // Handle hovering over a polygon
   const [hovered, setHovered] = useState(null);
 
-  // Handle 
+  // Handle clicking on a note and showing its thread
+  const [noteThread, setNoteThread] = useState(null);
   
   // Throttled coordinate updates
   useEffect(() => {
@@ -207,7 +208,8 @@ useEffect(() => {
       color: "#000000",
       font_size: "20px",
       created_at: new Date().toISOString(),
-      bounds: drawingBoundary
+      bounds: drawingBoundary,
+      comments: []
     };
     
     //reset drawingBoundary to empty array
@@ -462,7 +464,10 @@ useEffect(() => {
       console.log("Hovering over", note.text);
       setHovered((prev) => (prev !== note.id ? note.id : prev));
     },
-    mouseout: () => setHovered(null)
+    mouseout: () => setHovered(null),
+    click: () => {
+      setNoteThread(note);
+    }
   });
 
   // Helper to convert Leaflet [lat, lng] to Turf [lng, lat]
@@ -576,6 +581,64 @@ useEffect(() => {
       </>
     );
   };
+  const NoteThread = ({note}) => {
+    return (
+      <div className={`comments-panel open`}>
+        <div className="comments-header">
+          <h2>{note.text}</h2>
+          <button className="close-btn" onClick={() => setNoteThread(null)}>
+            <CloseIcon />
+          </button>
+        </div>
+        
+        <div className="comments-list">
+          {note.comments.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#777' }}>
+              No comments yet. Type in the textbox above to add a comment!
+            </div>
+          ) : (
+            note.comments
+              .map(comment => {
+                //const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
+                return (
+                  <div key={comment} className="comment-item">
+                    {/*<div className="comment-meta">
+                      <span className="comment-location">
+                        {new Date(note.created_at).toLocaleDateString()}
+                      </span>
+                    </div>*/}
+                    <div className="comment-content">
+                      {note.text}
+                    </div>
+                    {/*<div className="comment-actions">
+                      <button 
+                        className={`vote-btn upvote-btn ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                        onClick={() => handleVote(note.id, true)}
+                      >
+                        <UpvoteIcon /> {noteVotes.upvotes}
+                      </button>
+                      <button 
+                        className={`vote-btn downvote-btn ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                        onClick={() => handleVote(note.id, false)}
+                      >
+                        <DownvoteIcon /> {noteVotes.downvotes}
+                      </button>
+                      <button 
+                        className="vote-btn"
+                        onClick={() => deleteNote(note.id)}
+                        style={{ marginLeft: 'auto', color: '#d32f2f' }}
+                      >
+                        <CloseIcon />
+                      </button>
+                    </div>*/}
+                  </div>
+                );
+              })
+          )}
+        </div>
+      </div>
+    );
+  };
   return (
     <div className="map-container">
       {/* Search Box */}
@@ -598,7 +661,10 @@ useEffect(() => {
                 <div 
                   key={note.id}
                   className="search-result-item"
-                  onClick={() => focusOnNote(note.id)}
+                  onClick={() => {
+                    focusOnNote(note.id);
+                    setNoteThread(note);
+                  }}
                 >
                   <div className="search-result-text">
                     {note.text.length > 60
@@ -892,6 +958,9 @@ useEffect(() => {
         {StaticMapElements()}
       </MapContainer>
 
+      {/* Note Expanded Thread */}
+      {noteThread ? <NoteThread note={noteThread} />: null}
+
       {/* Notes List Panel */}
       <div className={`comments-panel ${showNotesList ? 'open' : ''}`}>
         <div className="comments-header">
@@ -916,7 +985,10 @@ useEffect(() => {
               .map(note => {
                 const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
                 return (
-                  <div key={note.id} className="comment-item">
+                  <div key={note.id} className="comment-item" onClick={() => {
+                      setNoteThread(note);
+                      setShowNotesList(false);
+                    }}>
                     <div className="comment-meta">
                       <span className="comment-location">
                         {new Date(note.created_at).toLocaleDateString()}
