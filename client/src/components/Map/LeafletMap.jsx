@@ -659,7 +659,7 @@ useEffect(() => {
           right: "20px",
           width: "150px",
           height: "40px",
-          zIndex: 1000,
+          zIndex: 500,
           backgroundColor: "#2962FF",
           color: "white",
           border: "none",
