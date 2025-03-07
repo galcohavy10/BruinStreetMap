@@ -190,11 +190,24 @@ useEffect(() => {
   fetchVotes();
 }, [notes]);
 
+  // Checks if point (lat, lng) is inside the bounds of UCLA
+  const isWithinBounds = (lat, lng) => {
+    const [[minLat, minLng], [maxLat, maxLng]] = bounds;
+    return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
+  };
+
   const handleMapClick = (latlng) => {
+    const { lat, lng } = latlng;
+
+    // Makes sure the point clicked upon is within UCLA bounds
+    if (!isWithinBounds(lat, lng)) {
+      alert("Please select a location within UCLA bounds.");
+      return;
+    }
+
     // Store selected location and show note form
     setSelectedLocation(latlng);
     setShowNoteForm(true);
-    const { lat, lng } = latlng;
     setDrawingBoundary([...drawingBoundary, [lat, lng]])
   };
 
