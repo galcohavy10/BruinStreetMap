@@ -10,12 +10,16 @@ const CLIENT_ID ='22705282070-u8depo5tckdvp7damoi2sjpcscttjo9u.apps.googleuserco
 function App() {
   const [user, setUser] = useState(null);
 
+  const handleLogout = () => {
+    setUser(null);
+  };
+
   return (
     <GoogleOAuthProvider clientId={CLIENT_ID}>
       <Router>
         <Routes>
           <Route path="/" element={user ? <Navigate to="/map" /> : <Login onLogin={setUser}/>}/>
-          <Route path="/map" element={user ? <LeafletMap/> : <Navigate to="/"/>}/>
+          <Route path="/map" element={user ? <LeafletMap onLogout={handleLogout}/> : <Navigate to="/"/>}/>
         </Routes>
       </Router>
     </GoogleOAuthProvider>

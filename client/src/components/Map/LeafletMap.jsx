@@ -18,6 +18,7 @@ import TextLabels from "./MapLabels";
 import StaticMapElements, { bounds } from "./StaticMapElements";
 import "./map.css";
 import * as turf from '@turf/turf';
+import { useNavigate } from "react-router-dom";
 
 
 // Center of UCLA campus
@@ -86,7 +87,8 @@ const ClickHandler = ({ onMapClick }) => {
   return null;
 };
 
-const LeafletMap = () => {
+const LeafletMap = ({ onLogout }) => {
+  const navigate = useNavigate();
   const coordsRef = useRef(null);
   const [userPosition, setUserPosition] = useState(null);
   const [notes, setNotes] = useState([]);
@@ -194,6 +196,11 @@ useEffect(() => {
     setShowNoteForm(true);
     const { lat, lng } = latlng;
     setDrawingBoundary([...drawingBoundary, [lat, lng]])
+  };
+
+  const handleLogout = () => {
+    onLogout();
+    navigate('/');
   };
 
   const submitNote = async () => {
@@ -641,6 +648,30 @@ useEffect(() => {
   };
   return (
     <div className="map-container">
+      
+      { /* Logout Button */ }
+      <button
+        className="logout-button"
+        onClick={handleLogout}
+        style={{
+          position: "absolute",
+          top: "75px",
+          right: "20px",
+          width: "150px",
+          height: "40px",
+          zIndex: 1000,
+          backgroundColor: "#2962FF",
+          color: "white",
+          border: "none",
+          cursor: "pointer",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+        }}
+        >
+        Logout
+      </button>
+
       {/* Search Box */}
       <div className="search-container">
         <div className="search-box">
