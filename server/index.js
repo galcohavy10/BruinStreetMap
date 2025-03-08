@@ -5,7 +5,7 @@ const pool = require("./db");
 const app = express();
 const port = process.env.PORT || 5001;
 const cors = require("cors");
-console.log(process.env.PORT);
+
 const corsOptions = {
   origin: "*",
   methods: "GET, PUT, POST, DELETE, HEAD, OPTIONS",
@@ -413,14 +413,14 @@ app.get("/notes", async (req, res) => {
 // Create a new note
 app.post("/notes", async (req, res) => {
   const { lat, lng, text, color, fontSize } = req.body;
-  
+
   try {
     const result = await pool.query(
       `INSERT INTO notes (lat, lng, text, color, font_size) 
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [lat, lng, text, color, fontSize]
     );
-    
+
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Error creating note:", error);
@@ -432,7 +432,7 @@ app.post("/notes", async (req, res) => {
 app.put("/notes/:id", async (req, res) => {
   const { id } = req.params;
   const { text, color, fontSize } = req.body;
-  
+
   try {
     const result = await pool.query(
       `UPDATE notes SET 
@@ -442,11 +442,11 @@ app.put("/notes/:id", async (req, res) => {
        WHERE id = $4 RETURNING *`,
       [text, color, fontSize, id]
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Note not found" });
     }
-    
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error("Error updating note:", error);
@@ -457,21 +457,20 @@ app.put("/notes/:id", async (req, res) => {
 // Delete a note
 app.delete("/notes/:id", async (req, res) => {
   const { id } = req.params;
-  
+
   try {
     const result = await pool.query("DELETE FROM notes WHERE id = $1", [id]);
-    
+
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Note not found" });
     }
-    
+
     res.json({ message: "Note deleted successfully" });
   } catch (error) {
     console.error("Error deleting note:", error);
     res.status(500).json({ error: "Error deleting note" });
   }
 });
-
 
 // Add these endpoints to your server's index.js file
 
@@ -543,10 +542,10 @@ app.post("/notes/:id/remove-vote", async (req, res) => {
   const { user_id } = req.body;
 
   try {
-    await pool.query(
-      `DELETE FROM votes WHERE user_id = $1 AND note_id = $2`,
-      [user_id, id]
-    );
+    await pool.query(`DELETE FROM votes WHERE user_id = $1 AND note_id = $2`, [
+      user_id,
+      id,
+    ]);
 
     res.json({ message: "Vote removed successfully!" });
   } catch (error) {
