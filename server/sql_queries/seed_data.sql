@@ -7,8 +7,8 @@ INSERT INTO users (username, email, major, clubs) VALUES
     ('dave101', 'dave@example.com', 'Engineering', ARRAY['Rocketry Club']),
     ('eve202', 'eve@example.com', 'Biology', ARRAY['Bioinformatics']);
 
--- Insert Posts (Coordinates are for UCLA area)
-INSERT INTO posts (user_id, title, latitude, longitude, body) VALUES
+-- Insert Notes (Coordinates are for UCLA area)
+INSERT INTO notes (user_id, title, latitude, longitude, body) VALUES
     (1, 'AI in Robotics', 34.0689, -118.4452, 'Exploring the impact of AI in robotics.'),
     (2, 'Black Holes and Time Travel', 34.0699, -118.4423, 'Discussion on the physics of black holes.'),
     (3, 'Cool Math Tricks', 34.0655, -118.4478, 'Some interesting tricks to amaze your friends.'),
@@ -16,7 +16,7 @@ INSERT INTO posts (user_id, title, latitude, longitude, body) VALUES
     (5, 'CRISPR and Gene Editing', 34.0710, -118.4431, 'How gene editing is changing the world.');
 
 -- Insert Comments (Replies indicated by parent_comment_id)
-INSERT INTO comments (post_id, user_id, parent_comment_id, body) VALUES
+INSERT INTO comments (note_id, user_id, parent_comment_id, body) VALUES
     (1, 2, NULL, 'This is a fascinating topic!'),
     (1, 3, 1, 'Totally agree, AI is the future.'),
     (2, 4, NULL, 'I always wondered about the paradoxes in time travel.'),
@@ -24,7 +24,7 @@ INSERT INTO comments (post_id, user_id, parent_comment_id, body) VALUES
     (3, 1, 4, 'Yes! Mental math tricks are amazing.');
 
 -- Insert Votes (Upvotes & Downvotes for Posts)
-INSERT INTO votes (user_id, post_id, upvote, downvote) VALUES
+INSERT INTO votes (user_id, note_id, upvote, downvote) VALUES
     (1, 2, TRUE, FALSE),
     (2, 3, TRUE, FALSE),
     (3, 4, TRUE, FALSE),

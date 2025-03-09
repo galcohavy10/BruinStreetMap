@@ -13,6 +13,7 @@ async function hardSetUp() {
     if (require.main === module) {
       process.exit(0);
     }
+    return true;
   } catch (err) {
     console.error("Error resetting database:", err);
     if (require.main === module) {

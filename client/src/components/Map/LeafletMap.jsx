@@ -293,8 +293,6 @@ const LeafletMap = ({ onLogout }) => {
     // Submit to API
     const apiBaseUrl = process.env.REACT_APP_API_URL || "";
 
-    console.log("apiBaseUrl:", apiBaseUrl);
-
     try {
       const response = await fetch(`${apiBaseUrl}/notes`, {
         method: "POST",
