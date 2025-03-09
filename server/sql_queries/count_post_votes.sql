@@ -1,1 +1,0 @@
-SELECT SUM(vote_type) AS score FROM votes WHERE post_id = 123;
