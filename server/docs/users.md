@@ -47,8 +47,48 @@
   }
   ```
 - **Response**:
+
   ```json
   {
     "message": "User updated successfully!"
+  }
+  ```
+
+  ## Get Single User
+
+There are 2 methods that get a single user, the first one uses the user_id. They both have the same successful return structure:
+
+### Get Single User by user_id
+
+- **Method**: GET
+- **Endpoint**: `/users/:id`
+- **Successful Response**:
+  ```json
+  {
+    "message": "User found",
+    "user": {
+      "username": "string",
+      "email": "string",
+      "major": "string",
+      "clubs": "string[]"
+    }
+  }
+  ```
+
+### Get Single user by username
+
+- **Method**: GET
+- **Endpoint**: `/users/username/:username`
+- **Successful Response**:
+
+  ```json
+  {
+    "message": "User found",
+    "user": {
+      "username": "string",
+      "email": "string",
+      "major": "string",
+      "clubs": "string[]"
+    }
   }
   ```

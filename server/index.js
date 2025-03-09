@@ -76,6 +76,48 @@ app.put("/users/:id", async (req, res) => {
   }
 });
 
+// GET USER BASED ON ID
+app.get("/users/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT username, email, major, clubs FROM users
+          WHERE id = $1`,
+      [id]
+    );
+
+    if (result.rows.length != 1) {
+      return res.status(404).json({ message: "User Not Found", user: null });
+    }
+
+    res.status(201).json({ message: "User found", user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: "Error getting user." });
+  }
+});
+
+// GET USER BASED ON USERNAME
+app.get("/users/username/:username", async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT username, email, major, clubs FROM users
+          WHERE username = $1`,
+      [username]
+    );
+
+    if (result.rows.length != 1) {
+      return res.status(404).json({ message: "User Not Found", user: null });
+    }
+
+    res.status(200).json({ message: "User found", user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: "Error getting user." });
+  }
+});
+
 /** POST A COMMENT */
 app.post("/comments", async (req, res) => {
   const { user_id, note_id, parent_comment_id, body } = req.body;
