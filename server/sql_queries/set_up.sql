@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS notes (
     title TEXT NOT NULL,
     latitude DECIMAL(9,6),
     longitude DECIMAL(9,6),
+    bounds DECIMAL(9,6)[][],
     body TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

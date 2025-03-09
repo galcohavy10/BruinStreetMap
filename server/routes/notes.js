@@ -161,6 +161,71 @@ router.post("/:id/remove-vote", async (req, res) => {
   }
 });
 
+router.get("/bounding-box", async (req, res) => {
+  const { lat_min, lat_max, lon_min, lon_max } = req.query;
+
+  try {
+    const result = await pool.query(
+      `SELECT * FROM notes 
+			WHERE latitude BETWEEN $1 AND $2
+			AND longitude BETWEEN $3 AND $4
+			ORDER BY created_at DESC`,
+      [lat_min, lat_max, lon_min, lon_max]
+    );
+
+    res.json({ message: "Notes retrieved successfully!", notes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: "Error retrieving notes: " + error });
+  }
+});
+
+router.get("/:id/bounds", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(`SELECT bounds FROM notes WHERE id = $1`, [
+      id,
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+
+    res.json({
+      message: "Bounds retrieved successfully!",
+      bounds: result.rows[0].bounds,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error retrieving bounds: " + error });
+  }
+});
+
+router.put("/:id/bounds", async (req, res) => {
+  const { id } = req.params;
+  const { bounds } = req.body;
+
+  try {
+    if (
+      bounds.length < 1 ||
+      bounds.find((bound) => bound.length != 2) != undefined
+    ) {
+      throw "Bounds must be an array of arrays of length 2 with numbers.";
+    }
+    const result = await pool.query(
+      `UPDATE notes SET bounds = $1 WHERE id = $2 RETURNING *`,
+      [bounds, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+
+    res.json({ message: "Bounds updated successfully!", note: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: "Error updating bounds: " + error });
+  }
+});
+
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { title, latitude, longitude } = req.body;
@@ -168,10 +233,10 @@ router.put("/:id", async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE notes SET 
-        title = COALESCE($1, title), 
-        latitude = COALESCE($2, latitude), 
-        longitude = COALESCE($3, longitude)
-      WHERE id = $4 RETURNING *`,
+		title = COALESCE($1, title), 
+		latitude = COALESCE($2, latitude), 
+		longitude = COALESCE($3, longitude)
+	  WHERE id = $4 RETURNING *`,
       [title, latitude, longitude, id]
     );
 
@@ -182,24 +247,6 @@ router.put("/:id", async (req, res) => {
     res.json({ message: "Note updated successfully!", note: result.rows[0] });
   } catch (error) {
     res.status(500).json({ error: "Error updating note: " + error });
-  }
-});
-
-router.get("/bounding-box", async (req, res) => {
-  const { lat_min, lat_max, lon_min, lon_max } = req.query;
-
-  try {
-    const result = await pool.query(
-      `SELECT * FROM notes 
-       WHERE latitude BETWEEN $1 AND $2
-       AND longitude BETWEEN $3 AND $4
-       ORDER BY created_at DESC`,
-      [lat_min, lat_max, lon_min, lon_max]
-    );
-
-    res.json({ message: "Notes retrieved successfully!", notes: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: "Error retrieving notes: " + error });
   }
 });
 

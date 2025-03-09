@@ -52,8 +52,8 @@ router.put("/:id", async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.error("Error updating note:", error);
-    res.status(500).json({ error: "Error updating note" });
+    console.error("Error updating marker:", error);
+    res.status(500).json({ error: "Error updating marker" });
   }
 });
 
