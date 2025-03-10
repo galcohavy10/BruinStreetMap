@@ -6,14 +6,34 @@ import "./Login.css";
 function Login({ onLogin }) {
   const [loginError, setLoginError] = useState(null);
 
-  const handleLoginSuccess = (credentialResponse) => {
+  const handleLoginSuccess =  async (credentialResponse) => {
     try {
       const decodedUser = jwtDecode(credentialResponse.credential);
       const userEmail = decodedUser.email;
       
       if (userEmail.endsWith("@g.ucla.edu")) {
         console.log("Authenticated:", userEmail);
-        onLogin(decodedUser);
+        console.log(decodedUser);
+        // onLogin(decodedUser);
+
+        // Send user information to backend
+        const response = await fetch("http://localhost:5001/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(decodedUser),
+        });
+
+        if(!response.ok){
+          throw new Error(`Server responded with status: ${response.status}`);
+        }
+        
+        // Update user state with backend response
+        const userData = await response.json();
+        console.log("User data from backend:", userData);
+        onLogin(userData.userEmail);
+
       } else {
         setLoginError("Please use your UCLA email (@g.ucla.edu) to login.");
         handleLoginFail();

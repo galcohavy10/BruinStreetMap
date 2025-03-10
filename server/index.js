@@ -54,6 +54,38 @@ app.post("/users/register", async (req, res) => {
   }
 });
 
+/** Specific handling for Google OAuth */
+app.post("/users/login", async (req, res) => {
+  const { email, name, picture } = req.body; // Extracted info from decoded JWT
+
+  try {
+    // If user already exists
+    const userResult = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+    
+    let user;
+    // If this is new user register it (no user found with given email)
+    if (userResult.rows.length === 0){
+      const newUserResult = await pool.query(
+        'INSERT INTO users (username, email, profile_picture) VALUES ($1, $2, $3) RETURNING *',
+        [name, email, picture]
+      );
+      user = newUserResult.rows[0];
+    }
+    // User is not new
+    else {
+      user = userResult.rows[0];
+    }
+    res.status(200).json( { message: "Login successful!", user});
+  }
+  catch(error){
+    console.error("Login error: ", error);
+    res.status(500).json( {error: "Error during login process." });
+  }
+});
+
 /** UPDATE USER INFO */
 app.put("/users/:id", async (req, res) => {
   const { id } = req.params;
