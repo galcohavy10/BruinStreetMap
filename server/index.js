@@ -66,6 +66,7 @@ app.post("/users/login", async (req, res) => {
     );
 
     let user;
+    let incompleteUser = false;
     if (userResult.rows.length === 0) {
       // If this is new user register it (no user found with given email)
       const newUserResult = await pool.query(
@@ -73,11 +74,15 @@ app.post("/users/login", async (req, res) => {
         [name, email]
       );
       user = newUserResult.rows[0];
+      incompleteUser = true;
     } else {
       // User is not new
       user = userResult.rows[0];
+      if ( !user.major || !user.clubs){
+        incompleteUser = true;
+      }
     }
-    res.status(200).json({ message: "Login successful!", user });
+    res.status(200).json({ message: "Login successful!", user, incompleteUser });
   } catch (error) {
     console.error("Login error: ", error);
     res.status(500).json({ error: "Error during login process." });
