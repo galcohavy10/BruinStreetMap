@@ -6,15 +6,12 @@ import "./Login.css";
 function Login({ onLogin }) {
   const [loginError, setLoginError] = useState(null);
 
-  const handleLoginSuccess =  async (credentialResponse) => {
+  const handleLoginSuccess = async (credentialResponse) => {
     try {
       const decodedUser = jwtDecode(credentialResponse.credential);
       const userEmail = decodedUser.email;
-      
-      if (userEmail.endsWith("@g.ucla.edu")) {
-        console.log("Authenticated:", userEmail);
-        console.log(decodedUser);
 
+      if (userEmail.endsWith("@g.ucla.edu")) {
         // Send user information to backend
         const response = await fetch("http://localhost:5001/users/login", {
           method: "POST",
@@ -23,55 +20,59 @@ function Login({ onLogin }) {
           },
           body: JSON.stringify(decodedUser),
         });
-
-        if(!response.ok){
+  
+        if (!response.ok) {
           throw new Error(`Server responded with status: ${response.status}`);
         }
-        
+  
         // Update user state with backend response
         const userData = await response.json();
         console.log("User data from backend:", userData);
-        if (userData.incompleteUser){
+  
+        if (userData.incompleteUser) {
           const major = prompt("Please enter your major.");
           let clubs = [];
           let moreClubs = true;
           while (moreClubs) {
-            const club = prompt("Please enter the clubs you are affiliated with (or leave blank if done).");
-          
+            const club = prompt(
+              "Please enter the clubs you are affiliated with (or leave blank if done)."
+            );
             if (club) {
               clubs.push(club);
             } else {
               moreClubs = false;
             }
           }
-          if (major && clubs){
-            console.log("User ID:", userData.user?.id);
-            const username = userData.name;
-            const email = userData.email;
-            const updatedResponse = await fetch(`http://localhost:5001/users/${userData.user.id}`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ 
-                username: decodedUser.name, 
-                email: decodedUser.email, 
-                major: major, 
-                clubs: clubs
-              }),
-            });
-            
+  
+          if (major && clubs && userData.user?.id) {
+            const updatedResponse = await fetch(
+              `http://localhost:5001/users/${userData.user.id}`,
+              {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  username: decodedUser.name,
+                  email: decodedUser.email,
+                  major: major,
+                  clubs: clubs,
+                }),
+              }
+            );
+  
             if (!updatedResponse.ok) {
               throw new Error(`Server responded with status: ${updatedResponse.status}`);
             }
-        
+  
             const updatedUserData = await updatedResponse.json();
             console.log("Updated user data:", updatedUserData);
+  
+            onLogin(updatedUserData);
           }
+        } else {
+          onLogin(userData.user);
         }
-        // onLogin(userData.userEmail);
-        onLogin(decodedUser);
-
       } else {
         setLoginError("Please use your UCLA email (@g.ucla.edu) to login.");
         handleLoginFail();

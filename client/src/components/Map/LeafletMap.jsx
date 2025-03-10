@@ -258,6 +258,10 @@ const LeafletMap = ({ onLogout }) => {
     navigate("/");
   };
 
+  const handleProfileClick = () => {
+    navigate("/profile");
+  }
+
   const submitNote = async () => {
     if (!noteText || !selectedLocation) return;
 
@@ -725,6 +729,29 @@ const LeafletMap = ({ onLogout }) => {
   };
   return (
     <div className="map-container">
+      {/* Profile Page Button */}
+      <button
+        className="profile-button"
+        onClick={handleProfileClick}
+        style={{
+          position: "absolute",
+          top: "125px", // Adjust the position as needed
+          right: "20px",
+          width: "150px",
+          height: "40px",
+          zIndex: 500,
+          backgroundColor: "#2962FF",
+          color: "white",
+          border: "none",
+          cursor: "pointer",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+        }}
+        >
+          Profile Page
+          </button>
+
       {/* Logout Button */}
       <button
         className="logout-button"
