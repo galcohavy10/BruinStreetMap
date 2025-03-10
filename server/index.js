@@ -35,7 +35,7 @@ app.get("/users", async (req, res) => {
   }
 });
 
-/** REGISTER A NEW USER */
+/** DEPRECATED : REGISTER A NEW USER : DEPRECATED */
 app.post("/users/register", async (req, res) => {
   const { username, email, major, clubs } = req.body;
 
@@ -56,33 +56,31 @@ app.post("/users/register", async (req, res) => {
 
 /** Specific handling for Google OAuth */
 app.post("/users/login", async (req, res) => {
-  const { email, name, picture } = req.body; // Extracted info from decoded JWT
+  const { email, name } = req.body; // Extracted info from decoded JWT
 
   try {
     // If user already exists
     const userResult = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
+      "SELECT * FROM users WHERE email = $1",
       [email]
     );
-    
+
     let user;
-    // If this is new user register it (no user found with given email)
-    if (userResult.rows.length === 0){
+    if (userResult.rows.length === 0) {
+      // If this is new user register it (no user found with given email)
       const newUserResult = await pool.query(
-        'INSERT INTO users (username, email, profile_picture) VALUES ($1, $2, $3) RETURNING *',
-        [name, email, picture]
+        "INSERT INTO users (username, email) VALUES ($1, $2) RETURNING *",
+        [name, email]
       );
       user = newUserResult.rows[0];
-    }
-    // User is not new
-    else {
+    } else {
+      // User is not new
       user = userResult.rows[0];
     }
-    res.status(200).json( { message: "Login successful!", user});
-  }
-  catch(error){
+    res.status(200).json({ message: "Login successful!", user });
+  } catch (error) {
     console.error("Login error: ", error);
-    res.status(500).json( {error: "Error during login process." });
+    res.status(500).json({ error: "Error during login process." });
   }
 });
 
