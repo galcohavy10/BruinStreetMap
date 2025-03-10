@@ -1,5 +1,5 @@
 # BruinStreetMap: A Location-Based Social Platform for UCLA Students
-## Demo Script - Duration: ~8 minutes
+## Demo Script - Duration: ~9 minutes
 
 ### Introduction (30 seconds) - Gal
 * Welcome audience to the demonstration of BruinStreetMap, a full-stack web app for UCLA CS 35L
