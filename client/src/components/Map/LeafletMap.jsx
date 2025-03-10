@@ -178,11 +178,16 @@ const LeafletMap = ({ onLogout }) => {
         }
 
         const data = await response.json();
-        setNotes(data);
+
+        // should check validity of data, but skip for now.
+
+        const notes = data.notes;
+
+        setNotes(notes);
 
         // Initialize votes to 0
         const initialVotes = {};
-        data.forEach((note) => {
+        notes.forEach((note) => {
           initialVotes[note.id] = {
             upvotes: 0,
             downvotes: 0,
@@ -260,7 +265,7 @@ const LeafletMap = ({ onLogout }) => {
 
   const handleProfileClick = () => {
     navigate("/profile");
-  }
+  };
 
   const submitNote = async () => {
     if (!noteText || !selectedLocation) return;
@@ -748,9 +753,9 @@ const LeafletMap = ({ onLogout }) => {
           fontSize: "14px",
           fontWeight: "500",
         }}
-        >
-          Profile Page
-          </button>
+      >
+        Profile Page
+      </button>
 
       {/* Logout Button */}
       <button

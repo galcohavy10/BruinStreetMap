@@ -96,6 +96,7 @@ router.get("/", async (req, res) => {
     const result = await pool.query(
       `SELECT * FROM notes ORDER BY created_at DESC`
     );
+    console.log("result: ", result.rows);
     res
       .status(200)
       .json({ message: "Notes retrieved successfully!", notes: result.rows });
@@ -142,6 +143,21 @@ router.post("/:id/downvote", async (req, res) => {
     res.json({ message: "Downvoted note successfully!" });
   } catch (error) {
     res.status(500).json({ error: "Error downvoting note" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(`DELETE FROM notes WHERE id = $1`, [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+    res.json({ message: "Note deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting note:", error);
+    res.status(500).json({ error: "Error deleting note" });
   }
 });
 

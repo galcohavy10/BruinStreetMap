@@ -1,79 +1,17 @@
-# Markers API Endpoints
-
-## Create Marker
-
-- **Method**: POST
-- **Endpoint**: `/markers`
-- **Request Body**:
-  ```json
-  {
-    "lat": "number",
-    "lng": "number",
-    "text": "string",
-    "color": "string (hex color)",
-    "fontSize": "string"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "message": "Marker created!",
-    "marker": {marker object}
-  }
-  ```
-
-## Get All Markers
-
-- **Method**: GET
-- **Endpoint**: `/markers`
-- **Response**:
-  ```json
-  {
-    "message": "Markers retrieved successfully!",
-    "markers": [array of marker objects]
-  }
-  ```
-
-## Update Marker
-
-- **Method**: PUT
-- **Endpoint**: `/markers/:id`
-- **Request Body**:
-  ```json
-  {
-    "text": "string (optional)",
-    "color": "string (optional)",
-    "fontSize": "string (optional)"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "message": "Marker updated successfully!",
-    "marker": {updated marker object}
-  }
-  ```
-
-## Delete Marker
-
-- **Method**: DELETE
-- **Endpoint**: `/markers/:id`
-- **Response**:
-  ```json
-  {
-    "message": "Marker deleted successfully"
-  }
-  ```
-
----
-
 # Notes API Endpoints
 
 ## Get All Notes
 
 - **Method**: GET
 - **Endpoint**: `/notes`
-- **Response**: Array of note objects
+- **Response**:
+
+  ```json
+  {
+    "message": "Notes retrieved successfully!",
+    "notes": [array of notes objects]
+  }
+  ```
 
 ## Create Note
 
@@ -82,11 +20,15 @@
 - **Request Body**:
   ```json
   {
-    "lat": "number",
-    "lng": "number",
-    "text": "string",
-    "color": "string (hex color)",
-    "fontSize": "string"
+    "message": "Note created!",
+    "note": {
+      "lat": "number",
+      "lng": "number",
+      "text": "string",
+      "color": "string (hex color)",
+      "fontSize": "string"
+      // Rest of note parameters
+    }
   }
   ```
 - **Response**: Created note object
@@ -98,9 +40,15 @@
 - **Request Body**:
   ```json
   {
-    "text": "string (optional)",
-    "color": "string (optional)",
-    "fontSize": "string (optional)"
+    "message": "Note updated successfully!",
+    "note": {
+      "lat": "number",
+      "lng": "number",
+      "text": "string",
+      "color": "string (hex color)",
+      "fontSize": "string"
+      // Rest of new note parameters
+    }
   }
   ```
 - **Response**: Updated note object
