@@ -265,6 +265,21 @@ const LeafletMap = ({ onLogout }) => {
   const submitNote = async () => {
     if (!noteText || !selectedLocation) return;
 
+    // Convert single-point notes to squares
+    let displayed_bounds = drawingBoundary;
+    if (displayed_bounds.length < 3){
+      let lat_delta = 0.0003;
+      let long_delta = 0.0003;
+      displayed_bounds = [
+        [selectedLocation.lat + lat_delta, selectedLocation.lng + long_delta],
+        [selectedLocation.lat - lat_delta, selectedLocation.lng + long_delta],
+        [selectedLocation.lat - lat_delta, selectedLocation.lng - long_delta],
+        [selectedLocation.lat + lat_delta, selectedLocation.lng - long_delta]
+      ]
+    }
+
+    console.log("Displayed bounds:",displayed_bounds);
+
     // Prepare the new note
     const newNote = {
       id: `temp-${Date.now()}`,
@@ -274,7 +289,7 @@ const LeafletMap = ({ onLogout }) => {
       color: "#000000",
       font_size: "20px",
       created_at: new Date().toISOString(),
-      bounds: drawingBoundary,
+      bounds: displayed_bounds,
       comments: [],
     };
 
@@ -296,6 +311,8 @@ const LeafletMap = ({ onLogout }) => {
 
     // Submit to API
     const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+
+    console.log("API Base URL:", apiBaseUrl);
 
     try {
       const response = await fetch(`${apiBaseUrl}/notes`, {
@@ -867,7 +884,7 @@ const LeafletMap = ({ onLogout }) => {
             //console.log(votes[a_id], votes[b_id]);
             //console.log(votes);
             try {
-              console.log("Comparing by upvotes");
+              //console.log("Comparing by upvotes");
               return -(
                 votes[a_id].upvotes -
                 votes[a_id].downvotes -
@@ -884,34 +901,34 @@ const LeafletMap = ({ onLogout }) => {
             let coords = note.bounds;
             if (note.bounds.length > 2) {
               const prev_notes = arr.slice(0, index);
-              console.log("Note bounds polygon ", toTurfCoords(note.bounds));
+              //console.log("Note bounds polygon ", toTurfCoords(note.bounds));
               let cur_turf = turf.polygon([toTurfCoords(note.bounds)]);
               for (let i = 0; i < prev_notes.length; i++) {
                 let prev_note = prev_notes[i];
                 if (prev_note.bounds.length < 3) {
                   continue;
                 }
-                console.log(
-                  "Previous note polygon ",
-                  toTurfCoords(prev_note.bounds)
-                );
+                //console.log(
+                //  "Previous note polygon ",
+                //  toTurfCoords(prev_note.bounds)
+                //);
                 let prev_turf = turf.polygon([toTurfCoords(prev_note.bounds)]);
-                console.log("Current Turf Polygon:", cur_turf);
-                console.log("Previous Turf Polygon:", prev_turf);
+                //console.log("Current Turf Polygon:", cur_turf);
+                //console.log("Previous Turf Polygon:", prev_turf);
                 //console.log("Difference: ", turf.difference(cur_turf, prev_turf));
                 if (cur_turf !== null) {
                   cur_turf = turf.difference(
                     turf.featureCollection([cur_turf, prev_turf])
                   );
                 }
-                console.log("cur_turf after difference: ", cur_turf);
+                //console.log("cur_turf after difference: ", cur_turf);
               }
               if (
                 cur_turf !== null &&
                 cur_turf.geometry !== null &&
                 cur_turf.geometry.type === "MultiPolygon"
               ) {
-                console.log("Current polygon is a multi-poly");
+                //console.log("Current polygon is a multi-poly");
                 //multipolygon = true;
                 //coords = cur_turf.geometry;
                 coords = cur_turf.geometry.coordinates;
@@ -920,16 +937,16 @@ const LeafletMap = ({ onLogout }) => {
                 cur_turf.geometry !== null &&
                 cur_turf.coordinates !== null
               ) {
-                console.log(
-                  "Coordinates being converted: ",
-                  cur_turf.geometry.coordinates[0]
-                );
+                //console.log(
+                //  "Coordinates being converted: ",
+                //  cur_turf.geometry.coordinates[0]
+                //);
                 coords = toLeafletCoords(cur_turf.geometry.coordinates[0]);
               } else {
-                console.log("Coords are null");
+                //console.log("Coords are null");
                 coords = null;
               }
-              console.log("Coords to display in Polygon: ", coords);
+              //console.log("Coords to display in Polygon: ", coords);
             }
             /* Render bounds if selected, or else a circle marker*/
             return (
