@@ -68,7 +68,7 @@ function Login({ onLogin }) {
             const updatedUserData = await updatedResponse.json();
             console.log("Updated user data:", updatedUserData);
   
-            onLogin(updatedUserData);
+            onLogin(updatedUserData.user);
           }
         } else {
           onLogin(userData.user);

@@ -106,8 +106,13 @@ app.put("/users/:id", async (req, res) => {
       WHERE id = $5`,
       [username, email, major, clubs, id]
     );
-
-    res.json({ message: "User updated successfully!" });
+    
+    const updatedUserResult = await pool.query(
+      `SELECT * FROM users WHERE id = $1`,
+      [id]
+    );
+    const updatedUser = updatedUserResult.rows[0];
+    res.json({ message: "User updated successfully!", user: updatedUser });
   } catch (error) {
     res.status(500).json({ error: "Error updating user" });
   }
