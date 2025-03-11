@@ -12,27 +12,6 @@
   }
   ```
 
-## Register New User
-
-- **Method**: POST
-- **Endpoint**: `/users/register`
-- **Request Body**:
-  ```json
-  {
-    "username": "string",
-    "email": "string",
-    "major": "string",
-    "clubs": "array"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "message": "User registered successfully!",
-    "user": {user object}
-  }
-  ```
-
 ## Update User
 
 - **Method**: PUT
@@ -54,7 +33,7 @@
   }
   ```
 
-  ## Get Single User
+## Get Single User
 
 There are 2 methods that get a single user, the first one uses the user_id. They both have the same successful return structure:
 
@@ -90,5 +69,57 @@ There are 2 methods that get a single user, the first one uses the user_id. They
       "major": "string",
       "clubs": "string[]"
     }
+  }
+  ```
+
+## Create new User
+
+- **Method**: POST
+- **Endpoint**: `/users/login`
+- **Request Body**:
+  ```json
+  {
+    "email": "string",
+    "username": "string"
+  }
+  ```
+- **Successful Response**:
+  ```json
+  {
+    "message": "Login successful!",
+    "user": {
+      "id": "number",
+      "username": "string",
+      "email": "string",
+      "major": "string",
+      "clubs": "string[]"
+    },
+    "incompleteUser": "boolean" // I don't know why this is here -- Brandon
+  }
+  ```
+
+## Get user Notes
+
+- **Method**: GET
+- **Endpoint**: `/users/:user_id/notes`
+- **Successful Response**:
+
+  ```json
+  {
+    "message": "User note(s) found",
+    "notes": "array of notes"
+  }
+  ```
+
+  The returned notes have these attributes: id, user_id, title, latitude, longitude, bounds, body
+
+  Not all attributes are guaranteed to be defined.
+
+  If no notes are found endpoint will return:
+
+  ```json
+  {
+    "message": "No notes found for this user.",
+    "notes": "empty array"
   }
   ```

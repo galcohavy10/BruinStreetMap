@@ -22,16 +22,15 @@
   {
     "message": "Note created!",
     "note": {
-      "lat": "number",
-      "lng": "number",
-      "text": "string",
-      "color": "string (hex color)",
-      "fontSize": "string"
-      // Rest of note parameters
+      "user_id": "number",
+      "title": "string",
+      "latitude": "number",
+      "longitude": "number",
+      "bounds": "array of numbers"
     }
   }
   ```
-- **Response**: Created note object
+- **Response**: Created note object, including it's id
 
 ## Update Note
 

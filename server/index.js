@@ -70,7 +70,7 @@ app.post("/users/login", async (req, res) => {
     if (userResult.rows.length === 0) {
       // If this is new user register it (no user found with given email)
       const newUserResult = await pool.query(
-        "INSERT INTO users (username, email) VALUES ($1, $2) RETURNING *",
+        "INSERT INTO users (username, email) VALUES ($1, $2) RETURNING *", // should not be returning everything -- Brandon
         [name, email]
       );
       user = newUserResult.rows[0];
@@ -78,11 +78,13 @@ app.post("/users/login", async (req, res) => {
     } else {
       // User is not new
       user = userResult.rows[0];
-      if ( !user.major || !user.clubs){
+      if (!user.major || !user.clubs) {
         incompleteUser = true;
       }
     }
-    res.status(200).json({ message: "Login successful!", user, incompleteUser });
+    res
+      .status(200)
+      .json({ message: "Login successful!", user, incompleteUser }); // This is a very bad way of verifying a new user was created -- Brandon
   } catch (error) {
     console.error("Login error: ", error);
     res.status(500).json({ error: "Error during login process." });
@@ -132,19 +134,40 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
-// GET USERS COMMENTS
-app.get("/users/:id/notes", async (req,res) => {
+// GET NOTES BASED ON USER
+app.get("/users/:id/notes", async (req, res) => {
   const { id } = req.params;
 
   try {
     const result = await pool.query(
-      `SELECT * FROM notes WHERE user_id = $1`,
+      `SELECT id, user_id, title, latitude, longitude, bounds, body FROM notes
+          WHERE user_id = $1`,
       [id]
     );
-    res.status(200).json( { notes: result.rows });
-  } catch(error) {
+    if (result.rows.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No notes found for this user.", notes: [] });
+    }
+
+    res.status(201).json({ message: "User note(s) found", notes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: "Error getting user." });
+  }
+});
+
+// GET USERS COMMENTS
+app.get("/users/:id/notes", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(`SELECT * FROM notes WHERE user_id = $1`, [
+      id,
+    ]);
+    res.status(200).json({ notes: result.rows });
+  } catch (error) {
     console.error("Error fetching user notes:", error);
-    res.status(500).json( { error: "Error fetching user notes" });
+    res.status(500).json({ error: "Error fetching user notes" });
   }
 });
 
