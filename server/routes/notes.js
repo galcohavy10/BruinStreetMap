@@ -4,13 +4,20 @@ const pool = require("../db");
 
 /** POST A NEW NOTE */
 router.post("/", async (req, res) => {
-  const { user_id, title, latitude, longitude } = req.body;
+  const { user_id, title, latitude, longitude, bounds } = req.body;
 
   try {
+    if (
+      bounds.length < 1 ||
+      bounds.find((bound) => bound.length != 2) != undefined
+    ) {
+      bounds = [];
+    }
+
     const result = await pool.query(
-      `INSERT INTO notes (user_id, title, latitude, longitude) 
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [user_id, title, latitude, longitude]
+      `INSERT INTO notes (user_id, title, latitude, longitude, bounds) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [user_id, title, latitude, longitude, bounds]
     );
 
     res.status(201).json({ message: "Note created!", note: result.rows[0] });

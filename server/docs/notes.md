@@ -26,6 +26,7 @@
       "title": "string",
       "latitude": "number",
       "longitude": "number"
+      "bounds": "array of numbers"
     }
   }
   ```
