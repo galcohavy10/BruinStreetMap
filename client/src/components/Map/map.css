@@ -237,6 +237,95 @@
 .comment-form .cancel-btn:hover {
   background: #e0e0e0;
 }
+/* Thread Form*/
+.thread-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 350px;
+  height: 100vh;
+  background: white;
+  box-shadow: -2px 0 15px rgba(0, 0, 0, 0.1);
+  z-index: 998;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: baseline;
+  align-items: left;
+  transform: translateX(0);
+}
+.thread-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 2;
+}
+
+.thread-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.thread-header .close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #777;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.thread-header .close-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.thread-header .close-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.thread-form {
+  width: 100%;
+  height: 15%;
+  min-height: 15%;
+  background: white;
+  box-shadow: -2px 0 15px rgba(0, 0, 0, 0.1);
+  z-index: 998;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.thread-commentarea {
+  width: 75%;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  resize: none;
+  height: 50%;
+  overflow-y: auto;
+  font-family: inherit;
+}
+.thread-commentarea:focus {
+  outline: none;
+  border-color: #2962FF;
+  box-shadow: 0 0 0 2px rgba(41, 98, 255, 0.2);
+}
 
 /* Comments list panel */
 .comments-panel {

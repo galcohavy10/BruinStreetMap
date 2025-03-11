@@ -160,6 +160,9 @@ const LeafletMap = ({ onLogout }) => {
   // Track the selected search location
   const [searchLocation, setSearchLocation] = useState(null);
 
+  // Comment Text
+  const [commentText, setCommentText] = useState("");
+
   // Throttled coordinate updates
   useEffect(() => {
     const interval = setInterval(() => {
@@ -736,63 +739,12 @@ const LeafletMap = ({ onLogout }) => {
       </>
     );
   };
-  const NoteThread = ({ note }) => {
-    return (
-      <div className={`comments-panel open`}>
-        <div className="comments-header">
-          <h2>{note.text}</h2>
-          <button className="close-btn" onClick={() => setNoteThread(null)}>
-            <CloseIcon />
-          </button>
-        </div>
 
-        <div className="comments-list">
-          {note.comments.length === 0 ? (
-            <div
-              style={{ padding: "20px", textAlign: "center", color: "#777" }}
-            >
-              No comments yet. Type in the textbox above to add a comment!
-            </div>
-          ) : (
-            note.comments.map((comment) => {
-              //const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
-              return (
-                <div key={comment} className="comment-item">
-                  {/*<div className="comment-meta">
-                      <span className="comment-location">
-                        {new Date(note.created_at).toLocaleDateString()}
-                      </span>
-                    </div>*/}
-                  <div className="comment-content">{note.text}</div>
-                  {/*<div className="comment-actions">
-                      <button 
-                        className={`vote-btn upvote-btn ${userVotes[note.id] === 'up' ? 'active' : ''}`}
-                        onClick={() => handleVote(note.id, true)}
-                      >
-                        <UpvoteIcon /> {noteVotes.upvotes}
-                      </button>
-                      <button 
-                        className={`vote-btn downvote-btn ${userVotes[note.id] === 'down' ? 'active' : ''}`}
-                        onClick={() => handleVote(note.id, false)}
-                      >
-                        <DownvoteIcon /> {noteVotes.downvotes}
-                      </button>
-                      <button 
-                        className="vote-btn"
-                        onClick={() => deleteNote(note.id)}
-                        style={{ marginLeft: 'auto', color: '#d32f2f' }}
-                      >
-                        <CloseIcon />
-                      </button>
-                    </div>*/}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-    );
-  };
+  const submitComment = () => {
+    noteThread.comments = [...noteThread.comments, commentText];
+    setCommentText("");
+  }
+  
   return (
     <div className="map-container">
       {/* Profile Page Button */}
@@ -1219,7 +1171,81 @@ const LeafletMap = ({ onLogout }) => {
       </MapContainer>
 
       {/* Note Expanded Thread */}
-      {noteThread ? <NoteThread note={noteThread} /> : null}
+      {noteThread && 
+      <div className={`thread-panel`}>
+        {/* Note Thread Header */}
+        <div className="thread-header">
+          <h2>{noteThread.text}</h2>
+          <button className="close-btn" onClick={() => {
+            setNoteThread(null);
+            setCommentText("");
+          }}>
+            <CloseIcon />
+          </button>
+        </div>
+
+        {/* Note Thread Textbox */}
+        <div className="thread-form">
+          <textarea
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder="What would you like to share about this note?"
+            className="thread-commentarea"
+          />
+          <div className="thread-form-actions">
+            <button
+              className="thread-submit-btn"
+              onClick={submitComment}
+              disabled={!commentText.trim()}
+            >
+              Post Note
+            </button>
+          </div>
+        </div>
+        <div className="comments-list">
+          {noteThread.comments.length === 0 ? 
+          (
+            <div
+              style={{ padding: "20px", textAlign: "center", color: "#777" }}
+            >
+              No comments yet. Type in the textbox above to add a comment!
+            </div>
+          ) : 
+          (
+            noteThread.comments.map((comment, index) => {
+              //const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
+              //console.log(comment, index);
+              return (
+                <div key={index} className="comment-item">
+                  <div className="comment-content">{comment}</div>
+                  {/*<div className="comment-actions">
+                      <button 
+                        className={`vote-btn upvote-btn ${userVotes[note.id] === 'up' ? 'active' : ''}`}
+                        onClick={() => handleVote(note.id, true)}
+                      >
+                        <UpvoteIcon /> {noteVotes.upvotes}
+                      </button>
+                      <button 
+                        className={`vote-btn downvote-btn ${userVotes[note.id] === 'down' ? 'active' : ''}`}
+                        onClick={() => handleVote(note.id, false)}
+                      >
+                        <DownvoteIcon /> {noteVotes.downvotes}
+                      </button>
+                      <button 
+                        className="vote-btn"
+                        onClick={() => deleteNote(note.id)}
+                        style={{ marginLeft: 'auto', color: '#d32f2f' }}
+                      >
+                        <CloseIcon />
+                      </button>
+                    </div>*/}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+      }
 
       {/* Notes List Panel */}
       <div className={`comments-panel ${showNotesList ? "open" : ""}`}>
