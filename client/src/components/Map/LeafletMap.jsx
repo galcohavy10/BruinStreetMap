@@ -19,6 +19,7 @@ import StaticMapElements, { bounds } from "./StaticMapElements";
 import "./map.css";
 import * as turf from "@turf/turf";
 import { useNavigate } from "react-router-dom";
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 // Center of UCLA campus
 const center = [
   (bounds[0][0] + bounds[1][0]) / 2,
@@ -156,6 +157,9 @@ const LeafletMap = ({ onLogout }) => {
   // Handle clicking on a note and showing its thread
   const [noteThread, setNoteThread] = useState(null);
 
+  // Track the selected search location
+  const [searchLocation, setSearchLocation] = useState(null);
+
   // Throttled coordinate updates
   useEffect(() => {
     const interval = setInterval(() => {
@@ -246,16 +250,29 @@ const LeafletMap = ({ onLogout }) => {
   const handleMapClick = (latlng) => {
     const { lat, lng } = latlng;
 
-    // Makes sure the point clicked upon is within UCLA bounds
-    if (!isWithinBounds(lat, lng)) {
-      alert("Please select a location within UCLA bounds.");
-      return;
+    if (searchQuery.length > 0){
+      if (!isWithinBounds(lat, lng)) {
+        setSearchQuery("");
+        setSearchLocation(null);
+        return;
+      }
+      else{
+        setSearchLocation([lat, lng]);
+        console.log("Search location specified");
+      }
     }
+    else{
+      // Makes sure the point clicked upon is within UCLA bounds
+      if (!isWithinBounds(lat, lng)) {
+        alert("Please select a location within UCLA bounds.");
+        return;
+      }
 
-    // Store selected location and show note form
-    setSelectedLocation(latlng);
-    setShowNoteForm(true);
-    setDrawingBoundary([...drawingBoundary, [lat, lng]]);
+      // Store selected location and show note form
+      setSelectedLocation(latlng);
+      setShowNoteForm(true);
+      setDrawingBoundary([...drawingBoundary, [lat, lng]]);
+    }
   };
 
   const handleLogout = () => {
@@ -535,9 +552,45 @@ const LeafletMap = ({ onLogout }) => {
     return "area-marker-low";
   };
 
+  // Helper to convert Leaflet [lat, lng] to Turf [lng, lat]
+  const toTurfCoords = (coords) => {
+    coords.map((c) => [c[1], c[0]]);
+    coords = [...coords, coords[0]];
+    return coords;
+  };
+
+  // Helper to convert Turf [lng, lat] back to Leaflet [lat, lng]
+  const toLeafletCoords = (coords) => {
+    coords.map((c) => [c[1], c[0]]);
+    coords = coords.slice(0, coords.length - 1);
+    return coords;
+  };
   // Filter notes based on search query
-  const filteredNotes = notes.filter((note) =>
-    note.text.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredNotes = notes.filter((note) => 
+    {
+      if (searchLocation === null){
+        return note.text.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      // Convert your point into a GeoJSON feature.
+      const pointGeoJSON = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [searchLocation[0], searchLocation[1]],
+        },
+        properties: {},
+      };
+
+      let polygon = turf.polygon([toTurfCoords(note.bounds)]);
+
+      console.log("Polygon:", polygon);
+      console.log("point:", pointGeoJSON);
+
+      if (booleanPointInPolygon(pointGeoJSON, polygon)){
+        return note.text.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      return false;
+    }
   );
 
   // Focus on searched note on the map
@@ -563,23 +616,14 @@ const LeafletMap = ({ onLogout }) => {
     },
     mouseout: () => setHovered(null),
     click: () => {
-      setNoteThread(note);
+      if (searchQuery.length === 0)
+      {
+        setNoteThread(note);
+      }
     },
   });
 
-  // Helper to convert Leaflet [lat, lng] to Turf [lng, lat]
-  const toTurfCoords = (coords) => {
-    coords.map((c) => [c[1], c[0]]);
-    coords = [...coords, coords[0]];
-    return coords;
-  };
-
-  // Helper to convert Turf [lng, lat] back to Leaflet [lat, lng]
-  const toLeafletCoords = (coords) => {
-    coords.map((c) => [c[1], c[0]]);
-    coords = coords.slice(0, coords.length - 1);
-    return coords;
-  };
+  
 
   //Render Multipolygon components
   const MultiPolygonComponent = ({ multiPoly, note, noteVotes }) => {
