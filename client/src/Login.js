@@ -1,6 +1,6 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from 'jwt-decode';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./Login.css";
 
 function Login({ onLogin }) {
@@ -10,6 +10,9 @@ function Login({ onLogin }) {
     try {
       const decodedUser = jwtDecode(credentialResponse.credential);
       const userEmail = decodedUser.email;
+      const tokenExpiry = decodedUser.exp * 1000; // Convert expiry to miliseconds (1 hour from login)
+      const currentTime = Date.now();
+      console.log(decodedUser);
 
       if (userEmail.endsWith("@g.ucla.edu")) {
         // Send user information to backend
@@ -28,6 +31,9 @@ function Login({ onLogin }) {
         // Update user state with backend response
         const userData = await response.json();
         console.log("User data from backend:", userData);
+
+        localStorage.setItem("tokenExpiry", tokenExpiry);
+        setAutoLogout(tokenExpiry - currentTime);
   
         if (userData.incompleteUser) {
           const major = prompt("Please enter your major.");
@@ -84,6 +90,20 @@ function Login({ onLogin }) {
     }
   };
   
+  // Calls onLogout out when token expires
+  const setAutoLogout = (timeUntilExpiry) => {
+    setTimeout( () => {
+      alert("Your session has expired. Please log in again.");
+      onLogout();
+    }, timeUntilExpiry);
+  };
+
+  // Logs user out
+  const onLogout = () => {
+    localStorage.removeItem("tokenExpiry");
+    onLogin(null);
+  };
+
   const handleLoginFail = () => {
     console.log("Login Failed.");
   };
