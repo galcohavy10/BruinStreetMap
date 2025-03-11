@@ -557,23 +557,38 @@ const LeafletMap = ({ onLogout }) => {
 
   // Helper to convert Leaflet [lat, lng] to Turf [lng, lat]
   const toTurfCoords = (coords) => {
-    coords.map((c) => [c[1], c[0]]);
-    coords = [...coords, coords[0]];
-    return coords;
+    if (!coords || !Array.isArray(coords)) {
+      return [];
+    }
+    const mappedCoords = coords.map((c) => [c[1], c[0]]);
+    return [...mappedCoords, mappedCoords[0]]; // Close the polygon
   };
 
   // Helper to convert Turf [lng, lat] back to Leaflet [lat, lng]
   const toLeafletCoords = (coords) => {
-    coords.map((c) => [c[1], c[0]]);
-    coords = coords.slice(0, coords.length - 1);
-    return coords;
+    if (!coords || !Array.isArray(coords)) {
+      return [];
+    }
+    const mappedCoords = coords.map((c) => [c[1], c[0]]);
+    return mappedCoords.slice(0, mappedCoords.length - 1);
   };
   // Filter notes based on search query
   const filteredNotes = notes.filter((note) => 
     {
+      // Check if note.text exists before calling toLowerCase()
+      if (!note || !note.text) {
+        return false;
+      }
+      
       if (searchLocation === null){
         return note.text.toLowerCase().includes(searchQuery.toLowerCase());
       }
+      
+      // Check if note.bounds exists
+      if (!note.bounds || note.bounds.length < 3) {
+        return false;
+      }
+      
       // Convert your point into a GeoJSON feature.
       const pointGeoJSON = {
         type: 'Feature',
@@ -630,24 +645,38 @@ const LeafletMap = ({ onLogout }) => {
 
   //Render Multipolygon components
   const MultiPolygonComponent = ({ multiPoly, note, noteVotes }) => {
-    // Convert a [lng, lat] coordinate pair to [lat, lng]
-    //const convertCoord = coord => [coord[1], coord[0]];
+    // Check if multiPoly or coordinates are null/undefined
+    if (!multiPoly || !multiPoly.coordinates || !Array.isArray(multiPoly.coordinates)) {
+      console.log("Invalid multiPoly data:", multiPoly);
+      return null;
+    }
 
     // Extract and convert outer rings for each polygon
     const leafletPolygons = multiPoly.coordinates.map((polygon, idx) => {
+      // Check if polygon is valid
+      if (!polygon || !Array.isArray(polygon)) {
+        console.log("Invalid polygon:", polygon);
+        return null;
+      }
+      
       // polygon is an array of rings. Typically, the first ring is the outer ring.
       console.log("polygon parameter", polygon);
-      const outerRing = polygon.map(toLeafletCoords);
+      const outerRing = toLeafletCoords(polygon);
       console.log("outer ring ", outerRing);
       return outerRing;
-    });
+    }).filter(Boolean); // Filter out null values
 
     console.log("Leaflet polygons to display ", leafletPolygons);
+
+    if (leafletPolygons.length === 0) {
+      return null;
+    }
 
     return (
       <>
         {leafletPolygons.map((positions, index) => (
           <Polygon
+            key={index}
             positions={positions}
             color="red"
             fillOpacity={0.3}
@@ -741,6 +770,13 @@ const LeafletMap = ({ onLogout }) => {
   };
 
   const submitComment = () => {
+    if (!noteThread) return;
+    
+    // Initialize comments array if it doesn't exist
+    if (!noteThread.comments) {
+      noteThread.comments = [];
+    }
+    
     noteThread.comments = [...noteThread.comments, commentText];
     setCommentText("");
   }
@@ -897,61 +933,70 @@ const LeafletMap = ({ onLogout }) => {
             }
           })
           .map((note, index, arr) => {
+            // Make sure note exists and has required properties
+            if (!note || !note.id) {
+              return null;
+            }
+            
             const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
             const isHighlighted = activeNote && activeNote.id === note.id;
+            
+            // Check if note.bounds exists
+            if (!note.bounds) {
+              console.log("Note has no bounds:", note);
+              return null;
+            }
+            
             let coords = note.bounds;
+            
             if (note.bounds.length > 2) {
+              try {
               const prev_notes = arr.slice(0, index);
-              //console.log("Note bounds polygon ", toTurfCoords(note.bounds));
               let cur_turf = turf.polygon([toTurfCoords(note.bounds)]);
+                
               for (let i = 0; i < prev_notes.length; i++) {
                 let prev_note = prev_notes[i];
-                if (prev_note.bounds.length < 3) {
-                  continue;
+                  if (!prev_note.bounds || prev_note.bounds.length < 3) {
+                    continue;
+                  }
+                  
+                  let prev_turf = turf.polygon([toTurfCoords(prev_note.bounds)]);
+                  
+                  if (cur_turf !== null) {
+                    try {
+                      cur_turf = turf.difference(
+                        turf.featureCollection([cur_turf, prev_turf])
+                      );
+                    } catch (error) {
+                      console.error("Error in turf.difference:", error);
+                    }
+                  }
                 }
-                //console.log(
-                //  "Previous note polygon ",
-                //  toTurfCoords(prev_note.bounds)
-                //);
-                let prev_turf = turf.polygon([toTurfCoords(prev_note.bounds)]);
-                //console.log("Current Turf Polygon:", cur_turf);
-                //console.log("Previous Turf Polygon:", prev_turf);
-                //console.log("Difference: ", turf.difference(cur_turf, prev_turf));
-                if (cur_turf !== null) {
-                  cur_turf = turf.difference(
-                    turf.featureCollection([cur_turf, prev_turf])
-                  );
+                
+                if (
+                  cur_turf !== null &&
+                  cur_turf.geometry !== null &&
+                  cur_turf.geometry.type === "MultiPolygon"
+                ) {
+                  coords = cur_turf.geometry.coordinates;
+                } else if (
+                  cur_turf !== null &&
+                  cur_turf.geometry !== null &&
+                  cur_turf.geometry.coordinates !== null
+                ) {
+                  coords = toLeafletCoords(cur_turf.geometry.coordinates[0]);
+                } else {
+                  coords = null;
                 }
-                //console.log("cur_turf after difference: ", cur_turf);
-              }
-              if (
-                cur_turf !== null &&
-                cur_turf.geometry !== null &&
-                cur_turf.geometry.type === "MultiPolygon"
-              ) {
-                //console.log("Current polygon is a multi-poly");
-                //multipolygon = true;
-                //coords = cur_turf.geometry;
-                coords = cur_turf.geometry.coordinates;
-              } else if (
-                cur_turf !== null &&
-                cur_turf.geometry !== null &&
-                cur_turf.coordinates !== null
-              ) {
-                //console.log(
-                //  "Coordinates being converted: ",
-                //  cur_turf.geometry.coordinates[0]
-                //);
-                coords = toLeafletCoords(cur_turf.geometry.coordinates[0]);
-              } else {
-                //console.log("Coords are null");
+              } catch (error) {
+                console.error("Error processing polygon:", error);
                 coords = null;
               }
-              //console.log("Coords to display in Polygon: ", coords);
             }
+            
             /* Render bounds if selected, or else a circle marker*/
             return (
-              <>
+              <React.Fragment key={note.id}>
                 {note.bounds.length > 2 ? (
                   <>
                     {!coords ? null : (
@@ -1054,17 +1099,13 @@ const LeafletMap = ({ onLogout }) => {
                           </>
                         ) : null}
                       </Polygon>
-                    )}{" "}
+                    )}
                   </>
                 ) : (
                   <CircleMarker
                     key={note.id}
                     center={[note.lat, note.lng]}
                     radius={getMarkerSize(note.id)}
-                    /*className={`area-marker ${getMarkerColor(note.id)} ${isHighlighted ? 'highlighted' : ''}`}
-              eventHandlers={{
-                click: () => setActiveNote(note)
-              }}*/
                     color="red"
                     eventHandlers={polygonEventHandlers(note)}
                   >
@@ -1072,11 +1113,6 @@ const LeafletMap = ({ onLogout }) => {
                     {hovered === note.id ? (
                       <>
                         <Tooltip
-                          /*direction="top" 
-                offset={[0, -10]} 
-                opacity={1.0}
-                permanent={true}
-                className="permanent-comment-box"*/
                           sticky={true}
                           permanent={true}
                           className="permanent-comment-box"
@@ -1161,9 +1197,9 @@ const LeafletMap = ({ onLogout }) => {
                     ) : null}
                   </CircleMarker>
                 )}
-              </>
+              </React.Fragment>
             );
-          })}
+          }).filter(Boolean)} {/* Filter out null values */}
 
         {/* Building labels */}
         <TextLabels mapLabels={mapLabels} />
@@ -1203,7 +1239,7 @@ const LeafletMap = ({ onLogout }) => {
           </div>
         </div>
         <div className="comments-list">
-          {noteThread.comments.length === 0 ? 
+          {!noteThread.comments || noteThread.comments.length === 0 ? 
           (
             <div
               style={{ padding: "20px", textAlign: "center", color: "#777" }}
@@ -1213,32 +1249,9 @@ const LeafletMap = ({ onLogout }) => {
           ) : 
           (
             noteThread.comments.map((comment, index) => {
-              //const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
-              //console.log(comment, index);
               return (
                 <div key={index} className="comment-item">
                   <div className="comment-content">{comment}</div>
-                  {/*<div className="comment-actions">
-                      <button 
-                        className={`vote-btn upvote-btn ${userVotes[note.id] === 'up' ? 'active' : ''}`}
-                        onClick={() => handleVote(note.id, true)}
-                      >
-                        <UpvoteIcon /> {noteVotes.upvotes}
-                      </button>
-                      <button 
-                        className={`vote-btn downvote-btn ${userVotes[note.id] === 'down' ? 'active' : ''}`}
-                        onClick={() => handleVote(note.id, false)}
-                      >
-                        <DownvoteIcon /> {noteVotes.downvotes}
-                      </button>
-                      <button 
-                        className="vote-btn"
-                        onClick={() => deleteNote(note.id)}
-                        style={{ marginLeft: 'auto', color: '#d32f2f' }}
-                      >
-                        <CloseIcon />
-                      </button>
-                    </div>*/}
                 </div>
               );
             })
