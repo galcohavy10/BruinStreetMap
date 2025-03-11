@@ -25,7 +25,7 @@
       "user_id": "number",
       "title": "string",
       "latitude": "number",
-      "longitude": "number"
+      "longitude": "number",
       "bounds": "array of numbers"
     }
   }
