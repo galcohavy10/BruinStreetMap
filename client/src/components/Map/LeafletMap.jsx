@@ -28,10 +28,10 @@ const center = [
 
 // Add accurate coordinates for UCLA buildings
 const mapLabels = [
-  { coords: { lat: 34.0729, lng: -118.4422 }, text: "Royce Hall" },
-  { coords: { lat: 34.0716, lng: -118.4422 }, text: "Powell Library" },
-  { coords: { lat: 34.07219, lng: -118.44317 }, text: "Janss Steps" },
-  { coords: { lat: 34.070406, lng: -118.444259 }, text: "Ackerman Union" },
+  { coords: { lat: 34.0729, lng: -118.4422 }, title: "Royce Hall" },
+  { coords: { lat: 34.0716, lng: -118.4422 }, title: "Powell Library" },
+  { coords: { lat: 34.07219, lng: -118.44317 }, title: "Janss Steps" },
+  { coords: { lat: 34.070406, lng: -118.444259 }, title: "Ackerman Union" },
 ];
 
 // Icons for the UI
@@ -132,7 +132,7 @@ const ClickHandler = ({ onMapClick }) => {
   return null;
 };
 
-const LeafletMap = ({ onLogout }) => {
+const LeafletMap = ({ onLogout, user }) => {
   const navigate = useNavigate();
   const coordsRef = useRef(null);
   const [userPosition, setUserPosition] = useState(null);
@@ -310,7 +310,7 @@ const LeafletMap = ({ onLogout }) => {
       id: `temp-${Date.now()}`,
       lat: selectedLocation.lat,
       lng: selectedLocation.lng,
-      text: noteText,
+      title: noteText,
       color: "#000000",
       font_size: "20px",
       created_at: new Date().toISOString(),
@@ -347,7 +347,7 @@ const LeafletMap = ({ onLogout }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: 1, // Use actual user ID when available
+          user_id: user.id, // Use actual user ID when available
           title: noteText, // Backend expects 'title', not 'text'
           latitude: selectedLocation.lat, // Backend expects 'latitude', not 'lat'
           longitude: selectedLocation.lng, // Backend expects 'longitude', not 'lng'
@@ -579,12 +579,12 @@ const LeafletMap = ({ onLogout }) => {
   const filteredNotes = notes.filter((note) => 
     {
       // Check if note.text exists before calling toLowerCase()
-      if (!note || !note.text) {
+      if (!note || !note.title) {
         return false;
       }
       
       if (searchLocation === null){
-        return note.text.toLowerCase().includes(searchQuery.toLowerCase());
+        return note.title.toLowerCase().includes(searchQuery.toLowerCase());
       }
       
       // Check if note.bounds exists
@@ -608,7 +608,7 @@ const LeafletMap = ({ onLogout }) => {
       console.log("point:", pointGeoJSON);
 
       if (booleanPointInPolygon(pointGeoJSON, polygon)){
-        return note.text.toLowerCase().includes(searchQuery.toLowerCase());
+        return note.title.toLowerCase().includes(searchQuery.toLowerCase());
       }
       return false;
     }
@@ -632,7 +632,7 @@ const LeafletMap = ({ onLogout }) => {
   // Handle hover and click for polygon bounds of notes
   const polygonEventHandlers = (note) => ({
     mouseover: () => {
-      console.log("Hovering over", note.text);
+      console.log("Hovering over", note.title);
       setHovered((prev) => (prev !== note.id ? note.id : prev));
     },
     mouseout: () => setHovered(null),
@@ -696,9 +696,9 @@ const LeafletMap = ({ onLogout }) => {
                 >
                   <div className="permanent-comment">
                     <div className="comment-text">
-                      {note.text.length > 40
-                        ? `${note.text.substring(0, 40)}...`
-                        : note.text}
+                      {note.title.length > 40
+                        ? `${note.title.substring(0, 40)}...`
+                        : note.title}
                     </div>
 
                     <div className="comment-vote-actions">
@@ -735,7 +735,7 @@ const LeafletMap = ({ onLogout }) => {
                     onClose={() => setActiveNote(null)}
                   >
                     <div className="popup-content">
-                      <p>{note.text}</p>
+                      <p>{note.title}</p>
                       <div className="popup-actions">
                         <div
                           className={`vote-btn upvote-btn ${
@@ -858,9 +858,9 @@ const LeafletMap = ({ onLogout }) => {
                   }}
                 >
                   <div className="search-result-text">
-                    {note.text.length > 60
-                      ? note.text.substring(0, 60) + "..."
-                      : note.text}
+                    {note.title.length > 60
+                      ? note.title.substring(0, 60) + "..."
+                      : note.title}
                   </div>
                 </div>
               ))
@@ -1018,9 +1018,9 @@ const LeafletMap = ({ onLogout }) => {
                             >
                               <div className="permanent-comment">
                                 <div className="comment-text">
-                                  {note.text.length > 40
-                                    ? `${note.text.substring(0, 40)}...`
-                                    : note.text}
+                                  {note.title.length > 40
+                                    ? `${note.title.substring(0, 40)}...`
+                                    : note.title}
                                 </div>
 
                                 <div className="comment-vote-actions">
@@ -1063,7 +1063,7 @@ const LeafletMap = ({ onLogout }) => {
                                 onClose={() => setActiveNote(null)}
                               >
                                 <div className="popup-content">
-                                  <p>{note.text}</p>
+                                  <p>{note.title}</p>
                                   <div className="popup-actions">
                                     <div
                                       className={`vote-btn upvote-btn ${
@@ -1122,9 +1122,9 @@ const LeafletMap = ({ onLogout }) => {
                         >
                           <div className="permanent-comment">
                             <div className="comment-text">
-                              {note.text.length > 40
-                                ? `${note.text.substring(0, 40)}...`
-                                : note.text}
+                              {note.title.length > 40
+                                ? `${note.title.substring(0, 40)}...`
+                                : note.title}
                             </div>
 
                             <div className="comment-vote-actions">
@@ -1162,7 +1162,7 @@ const LeafletMap = ({ onLogout }) => {
                             onClose={() => setActiveNote(null)}
                           >
                             <div className="popup-content">
-                              <p>{note.text}</p>
+                              <p>{note.title}</p>
                               <div className="popup-actions">
                                 <div
                                   className={`vote-btn upvote-btn ${
@@ -1307,7 +1307,7 @@ const LeafletMap = ({ onLogout }) => {
                         {new Date(note.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <div className="comment-content">{note.text}</div>
+                    <div className="comment-content">{note.title}</div>
                     <div className="comment-actions">
                       <button
                         className={`vote-btn upvote-btn ${

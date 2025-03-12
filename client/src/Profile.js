@@ -71,10 +71,9 @@ function Profile({ user }) {
               <div className="notes-list">
                 {userNotes.map((note) => (
                   <div key={note.id} className="note-item">
-                    <div className="note-text">{note.text}</div>
+                    <div className="note-text">{note.title}</div>
                     <div className="note-meta">
-                      <span>Location: {note.lat}, {note.lng}</span>
-                      <span>Created: {new Date(note.created_at).toLocaleDateString()}</span>
+                      <span>Location: {note.latitude}, {note.longitude}</span>
                     </div>
                   </div>
                 ))}

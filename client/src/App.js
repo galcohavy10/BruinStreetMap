@@ -29,7 +29,7 @@ function App() {
           />
           <Route
             path="/map"
-            element={user ? <LeafletMap onLogout={handleLogout} /> : <Navigate to="/" replace />}
+            element={user ? <LeafletMap onLogout={handleLogout} user={user}  /> : <Navigate to="/" replace />}
           />
           <Route
             path="/profile"

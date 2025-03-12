@@ -161,20 +161,20 @@ app.get("/users/:id/notes", async (req, res) => {
   }
 });
 
-// GET USERS COMMENTS
-app.get("/users/:id/notes", async (req, res) => {
-  const { id } = req.params;
+// // GET USERS COMMENTS
+// app.get("/users/:id/notes", async (req, res) => {
+//   const { id } = req.params;
 
-  try {
-    const result = await pool.query(`SELECT * FROM notes WHERE user_id = $1`, [
-      id,
-    ]);
-    res.status(200).json({ notes: result.rows });
-  } catch (error) {
-    console.error("Error fetching user notes:", error);
-    res.status(500).json({ error: "Error fetching user notes" });
-  }
-});
+//   try {
+//     const result = await pool.query(`SELECT * FROM notes WHERE user_id = $1`, [
+//       id,
+//     ]);
+//     res.status(200).json({ notes: result.rows });
+//   } catch (error) {
+//     console.error("Error fetching user notes:", error);
+//     res.status(500).json({ error: "Error fetching user notes" });
+//   }
+// });
 
 // GET USER BASED ON USERNAME
 app.get("/users/username/:username", async (req, res) => {
