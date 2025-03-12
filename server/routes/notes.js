@@ -4,7 +4,8 @@ const pool = require("../db");
 
 /** POST A NEW NOTE */
 router.post("/", async (req, res) => {
-  const { user_id, title, latitude, longitude, bounds } = req.body;
+  const { user_id, title, latitude, longitude } = req.body;
+  let { bounds } = req.body;
 
   try {
     if (
@@ -28,7 +29,7 @@ router.post("/", async (req, res) => {
 
 /** FILTER NOTES BY USER INFO (Major & Clubs) */
 router.get("/filter", async (req, res) => {
-  const { major, clubs } = req.query;
+  const { major, clubs } = req.body;
 
   try {
     const result = await pool.query(
@@ -43,6 +44,24 @@ router.get("/filter", async (req, res) => {
   } catch (error) {
     console.log("Error filtering notes", error);
     res.status(500).json({ error: "Error filtering notes" });
+  }
+});
+
+router.get("/bounding-box", async (req, res) => {
+  const { lat_min, lat_max, lon_min, lon_max } = req.query;
+
+  try {
+    const result = await pool.query(
+      `SELECT * FROM notes 
+			WHERE latitude BETWEEN $1 AND $2
+			AND longitude BETWEEN $3 AND $4
+			ORDER BY created_at DESC`,
+      [lat_min, lat_max, lon_min, lon_max]
+    );
+
+    res.json({ message: "Notes retrieved successfully!", notes: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: "Error retrieving notes: " + error });
   }
 });
 
@@ -182,24 +201,6 @@ router.post("/:id/remove-vote", async (req, res) => {
     res.json({ message: "Vote removed successfully!" });
   } catch (error) {
     res.status(500).json({ error: "Error removing vote" });
-  }
-});
-
-router.get("/bounding-box", async (req, res) => {
-  const { lat_min, lat_max, lon_min, lon_max } = req.query;
-
-  try {
-    const result = await pool.query(
-      `SELECT * FROM notes 
-			WHERE latitude BETWEEN $1 AND $2
-			AND longitude BETWEEN $3 AND $4
-			ORDER BY created_at DESC`,
-      [lat_min, lat_max, lon_min, lon_max]
-    );
-
-    res.json({ message: "Notes retrieved successfully!", notes: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: "Error retrieving notes: " + error });
   }
 });
 

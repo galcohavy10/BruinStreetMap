@@ -106,7 +106,7 @@ app.put("/users/:id", async (req, res) => {
       WHERE id = $5`,
       [username, email, major, clubs, id]
     );
-    
+
     const updatedUserResult = await pool.query(
       `SELECT * FROM users WHERE id = $1`,
       [id]

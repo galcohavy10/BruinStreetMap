@@ -6,7 +6,10 @@ const path = require("path");
 
 async function setup() {
   try {
-    const set_up_sql_path = path.join(__dirname, "sql_queries/seed_data.sql");
+    const set_up_sql_path = path.join(
+      __dirname,
+      "sql_queries/seed_data_full.sql"
+    );
 
     const sql = fs.readFileSync(set_up_sql_path, "utf-8");
 
