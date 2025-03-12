@@ -884,34 +884,34 @@ const LeafletMap = ({ onLogout }) => {
         {drawingBoundary && drawingBoundary.length > 1 && (
           <Polygon positions={drawingBoundary} color="red" fillOpacity={0.3} />
         )}
-        {/* User location marker */}
-        {userPosition && (
-          <>
-            <Marker position={userPosition} icon={userIcon} />
-            <CircleMarker
-              center={userPosition}
-              radius={8}
-              className="user-location"
-              pathOptions={{
-                fillColor: "#4285F4",
-                color: "white",
-                weight: 2,
-                fillOpacity: 0.7,
-              }}
-            />
-            <CircleMarker
-              center={userPosition}
-              radius={15}
-              className="user-location-pulse"
-              pathOptions={{
-                fillColor: "transparent",
-                color: "#4285F4",
-                weight: 1,
-                fillOpacity: 0.2,
-              }}
-            />
-          </>
-        )}
+
+      {/* User location marker - simplified version */}
+      {userPosition && (
+        <>
+          <CircleMarker
+            center={userPosition}
+            radius={8}
+            className="user-location"
+            pathOptions={{
+              fillColor: "#4285F4",
+              color: "white",
+              weight: 2,
+              fillOpacity: 0.7,
+            }}
+          />
+          {/* Optional: Static circle instead of animated pulse */}
+          <CircleMarker
+            center={userPosition}
+            radius={12}
+            pathOptions={{
+              fillColor: "transparent",
+              color: "#4285F4",
+              weight: 1,
+              fillOpacity: 0.1,
+            }}
+          />
+        </>
+      )}
 
         {/* Note markers with permanently visible comments */}
         {notes
