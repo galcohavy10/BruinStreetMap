@@ -138,7 +138,7 @@ const LeafletMap = ({ onLogout }) => {
   const [userPosition, setUserPosition] = useState(null);
   const [notes, setNotes] = useState([]);
   const [showNoteForm, setShowNoteForm] = useState(false);
-  const [noteText, setNoteText] = useState("");
+  const [noteTitle, setNoteTitle] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showNotesList, setShowNotesList] = useState(false);
   const [throttleCoords, setThrottleCoords] = useState(null);
@@ -212,35 +212,68 @@ const LeafletMap = ({ onLogout }) => {
 
   // Add this right after the useEffect where you fetch notes
   useEffect(() => {
-    if (notes.length === 0) return;
-
+    // Guard clause with proper type checking
+    if (!notes || !Array.isArray(notes) || notes.length === 0) return;
+  
     const fetchVotes = async () => {
       const apiBaseUrl = process.env.REACT_APP_API_URL || "";
       try {
-        // Fetch votes for each note
-        const votePromises = notes.map((note) =>
-          fetch(`${apiBaseUrl}/notes/${note.id}/votes`).then((res) =>
-            res.ok ? res.json() : { upvotes: "0", downvotes: "0" }
-          )
-        );
-
+        console.log("Fetching votes for notes:", notes.map(n => n.id));
+        
+        // Fetch votes for each note with robust error handling
+        const votePromises = notes.map((note) => {
+          // Skip notes without valid IDs
+          if (!note || !note.id) {
+            console.log("Skipping note with no ID:", note);
+            return Promise.resolve({ upvotes: "0", downvotes: "0" });
+          }
+          
+          return fetch(`${apiBaseUrl}/notes/${note.id}/votes`)
+            .then((res) => {
+              if (!res.ok) {
+                console.log(`Error fetching votes for note ${note.id}: ${res.status}`);
+                return { upvotes: "0", downvotes: "0" };
+              }
+              return res.json();
+            })
+            .catch((error) => {
+              console.error(`Failed to fetch votes for note ${note.id}:`, error);
+              return { upvotes: "0", downvotes: "0" };
+            });
+        });
+  
         const voteResults = await Promise.all(votePromises);
-
+        console.log("Vote results:", voteResults);
+  
         // Create votes object
         const votesObj = {};
         notes.forEach((note, index) => {
+          if (!note || !note.id) return;
+          
+          // Handle potential undefined or malformed vote results
+          const result = voteResults[index] || { upvotes: "0", downvotes: "0" };
+          
           votesObj[note.id] = {
-            upvotes: parseInt(voteResults[index].upvotes || 0),
-            downvotes: parseInt(voteResults[index].downvotes || 0),
+            upvotes: parseInt(result.upvotes || 0),
+            downvotes: parseInt(result.downvotes || 0),
           };
         });
-
+  
+        console.log("Setting votes:", votesObj);
         setVotes(votesObj);
       } catch (error) {
-        console.error("Error fetching votes:", error);
+        console.error("Error in vote fetching process:", error);
+        // Don't leave votes empty on error
+        const safeVotes = {};
+        notes.forEach(note => {
+          if (note && note.id) {
+            safeVotes[note.id] = { upvotes: 0, downvotes: 0 };
+          }
+        });
+        setVotes(safeVotes);
       }
     };
-
+  
     fetchVotes();
   }, [notes]);
 
@@ -288,7 +321,7 @@ const LeafletMap = ({ onLogout }) => {
   };
 
   const submitNote = async () => {
-    if (!noteText || !selectedLocation) return;
+    if (!noteTitle || !selectedLocation) return;
   
     // Convert single-point notes to squares
     let displayed_bounds = drawingBoundary;
@@ -310,7 +343,7 @@ const LeafletMap = ({ onLogout }) => {
       id: `temp-${Date.now()}`,
       lat: selectedLocation.lat,
       lng: selectedLocation.lng,
-      text: noteText,
+      title: noteTitle,
       color: "#000000",
       font_size: "20px",
       created_at: new Date().toISOString(),
@@ -331,7 +364,7 @@ const LeafletMap = ({ onLogout }) => {
     }));
   
     // Reset form
-    setNoteText("");
+    setNoteTitle("");
     setShowNoteForm(false);
   
     // Submit to API
@@ -348,7 +381,7 @@ const LeafletMap = ({ onLogout }) => {
         },
         body: JSON.stringify({
           user_id: 1, // Use actual user ID when available
-          title: noteText, // Backend expects 'title', not 'text'
+          title: noteTitle, // Backend expects 'title', not 'text'
           latitude: selectedLocation.lat, // Backend expects 'latitude', not 'lat'
           longitude: selectedLocation.lng, // Backend expects 'longitude', not 'lng'
           bounds: displayed_bounds, // Include bounds
@@ -578,13 +611,13 @@ const LeafletMap = ({ onLogout }) => {
   // Filter notes based on search query
   const filteredNotes = notes.filter((note) => 
     {
-      // Check if note.text exists before calling toLowerCase()
-      if (!note || !note.text) {
+      // Check if note.title exists before calling toLowerCase()
+      if (!note || !note.title) {
         return false;
       }
       
       if (searchLocation === null){
-        return note.text.toLowerCase().includes(searchQuery.toLowerCase());
+        return note.title.toLowerCase().includes(searchQuery.toLowerCase());
       }
       
       // Check if note.bounds exists
@@ -608,7 +641,7 @@ const LeafletMap = ({ onLogout }) => {
       console.log("point:", pointGeoJSON);
 
       if (booleanPointInPolygon(pointGeoJSON, polygon)){
-        return note.text.toLowerCase().includes(searchQuery.toLowerCase());
+        return note.title.toLowerCase().includes(searchQuery.toLowerCase());
       }
       return false;
     }
@@ -632,7 +665,7 @@ const LeafletMap = ({ onLogout }) => {
   // Handle hover and click for polygon bounds of notes
   const polygonEventHandlers = (note) => ({
     mouseover: () => {
-      console.log("Hovering over", note.text);
+      console.log("Hovering over", note.title);
       setHovered((prev) => (prev !== note.id ? note.id : prev));
     },
     mouseout: () => setHovered(null),
@@ -696,9 +729,9 @@ const LeafletMap = ({ onLogout }) => {
                 >
                   <div className="permanent-comment">
                     <div className="comment-text">
-                      {note.text.length > 40
-                        ? `${note.text.substring(0, 40)}...`
-                        : note.text}
+                      {note.title.length > 40
+                        ? `${note.title.substring(0, 40)}...`
+                        : note.title}
                     </div>
 
                     <div className="comment-vote-actions">
@@ -735,7 +768,7 @@ const LeafletMap = ({ onLogout }) => {
                     onClose={() => setActiveNote(null)}
                   >
                     <div className="popup-content">
-                      <p>{note.text}</p>
+                      <p>{note.title}</p>
                       <div className="popup-actions">
                         <div
                           className={`vote-btn upvote-btn ${
@@ -858,9 +891,9 @@ const LeafletMap = ({ onLogout }) => {
                   }}
                 >
                   <div className="search-result-text">
-                    {note.text.length > 60
-                      ? note.text.substring(0, 60) + "..."
-                      : note.text}
+                    {note.title.length > 60
+                      ? note.title.substring(0, 60) + "..."
+                      : note.title}
                   </div>
                 </div>
               ))
@@ -917,22 +950,34 @@ const LeafletMap = ({ onLogout }) => {
       )}
 
         {/* Note markers with permanently visible comments */}
-        {notes
+        {/* Note markers with permanently visible comments */}
+        {notes && Array.isArray(notes) ? notes
           .sort((a, b) => {
+            // Safety checks for both notes
+            if (!a || !b || !a.id || !b.id) return 0;
+            
             const a_id = a.id;
             const b_id = b.id;
-            //console.log(votes[a_id], votes[b_id]);
-            //console.log(votes);
+            
+            // Make sure vote objects exist
+            if (!votes || !votes[a_id] || !votes[b_id]) {
+              return 0;
+            }
+            
+            // Safely access vote properties
+            const aUpvotes = votes[a_id]?.upvotes || 0;
+            const aDownvotes = votes[a_id]?.downvotes || 0;
+            const bUpvotes = votes[b_id]?.upvotes || 0;
+            const bDownvotes = votes[b_id]?.downvotes || 0;
+            
             try {
-              //console.log("Comparing by upvotes");
-              return -(
-                votes[a_id].upvotes -
-                votes[a_id].downvotes -
-                (votes[b_id].upvotes - votes[b_id].downvotes)
-              );
-            } catch {
-              console.log("Upvotes or downvotes not working");
-              return -1;
+              // Calculate scores safely
+              const aScore = aUpvotes - aDownvotes;
+              const bScore = bUpvotes - bDownvotes;
+              return -(aScore - bScore);
+            } catch (error) {
+              console.error("Error in vote sorting:", error);
+              return 0;
             }
           })
           .map((note, index, arr) => {
@@ -1000,7 +1045,7 @@ const LeafletMap = ({ onLogout }) => {
             /* Render bounds if selected, or else a circle marker*/
             return (
               <React.Fragment key={note.id}>
-                {note.bounds.length > 2 ? (
+                {note.bounds && Array.isArray(note.bounds) && note.bounds.length > 2 ? (
                   <>
                     {!coords ? null : (
                       <Polygon
@@ -1018,9 +1063,9 @@ const LeafletMap = ({ onLogout }) => {
                             >
                               <div className="permanent-comment">
                                 <div className="comment-text">
-                                  {note.text.length > 40
-                                    ? `${note.text.substring(0, 40)}...`
-                                    : note.text}
+                                  {note.title.length > 40
+                                    ? `${note.title.substring(0, 40)}...`
+                                    : note.title}
                                 </div>
 
                                 <div className="comment-vote-actions">
@@ -1063,7 +1108,7 @@ const LeafletMap = ({ onLogout }) => {
                                 onClose={() => setActiveNote(null)}
                               >
                                 <div className="popup-content">
-                                  <p>{note.text}</p>
+                                  <p>{note.title}</p>
                                   <div className="popup-actions">
                                     <div
                                       className={`vote-btn upvote-btn ${
@@ -1122,9 +1167,9 @@ const LeafletMap = ({ onLogout }) => {
                         >
                           <div className="permanent-comment">
                             <div className="comment-text">
-                              {note.text.length > 40
-                                ? `${note.text.substring(0, 40)}...`
-                                : note.text}
+                              {note.title.length > 40
+                                ? `${note.title.substring(0, 40)}...`
+                                : note.title}
                             </div>
 
                             <div className="comment-vote-actions">
@@ -1162,7 +1207,7 @@ const LeafletMap = ({ onLogout }) => {
                             onClose={() => setActiveNote(null)}
                           >
                             <div className="popup-content">
-                              <p>{note.text}</p>
+                              <p>{note.title}</p>
                               <div className="popup-actions">
                                 <div
                                   className={`vote-btn upvote-btn ${
@@ -1202,7 +1247,8 @@ const LeafletMap = ({ onLogout }) => {
                 )}
               </React.Fragment>
             );
-          }).filter(Boolean)} {/* Filter out null values */}
+          })
+          .filter(Boolean) : null /* Filter out null values and handle empty notes array */}
 
         {/* Building labels */}
         <TextLabels mapLabels={mapLabels} />
@@ -1214,7 +1260,7 @@ const LeafletMap = ({ onLogout }) => {
       <div className={`thread-panel`}>
         {/* Note Thread Header */}
         <div className="thread-header">
-          <h2>{noteThread.text}</h2>
+          <h2>{noteThread.title}</h2>
           <button className="close-btn" onClick={() => {
             setNoteThread(null);
             setCommentText("");
@@ -1307,7 +1353,7 @@ const LeafletMap = ({ onLogout }) => {
                         {new Date(note.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <div className="comment-content">{note.text}</div>
+                    <div className="comment-content">{note.title}</div>
                     <div className="comment-actions">
                       <button
                         className={`vote-btn upvote-btn ${
@@ -1345,8 +1391,8 @@ const LeafletMap = ({ onLogout }) => {
         <div className="comment-form">
           <h3>Add Your Note</h3>
           <textarea
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
+            value={noteTitle}
+            onChange={(e) => setNoteTitle(e.target.value)}
             placeholder="What would you like to share about this area?"
             className="note-textarea"
           />
@@ -1355,7 +1401,7 @@ const LeafletMap = ({ onLogout }) => {
               className="cancel-btn"
               onClick={() => {
                 setShowNoteForm(false);
-                setNoteText("");
+                setNoteTitle("");
                 setDrawingBoundary([]);
               }}
             >
@@ -1364,7 +1410,7 @@ const LeafletMap = ({ onLogout }) => {
             <button
               className="submit-btn"
               onClick={submitNote}
-              disabled={!noteText.trim()}
+              disabled={!noteTitle.trim()}
             >
               Post Note
             </button>
