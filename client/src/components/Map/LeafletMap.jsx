@@ -389,7 +389,7 @@ const LeafletMap = ({ onLogout, user }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: user_id_parameter, // Use actual user ID when available
+          user_id: 1, // Use actual user ID when available
           title: noteTitle, // Backend expects 'title', not 'text'
           latitude: selectedLocation.lat, // Backend expects 'latitude', not 'lat'
           longitude: selectedLocation.lng, // Backend expects 'longitude', not 'lng'
