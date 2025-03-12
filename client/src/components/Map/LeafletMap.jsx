@@ -274,8 +274,62 @@ const LeafletMap = ({ onLogout, user }) => {
         setVotes(safeVotes);
       }
     };
+
+    const fetchComments = async () => {
+      const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+      try {
+        console.log("Fetching comments for notes:", notes);
+        
+        // Fetch comments for each note with robust error handling
+        const commentPromises = notes.map((note) => {
+          // Skip notes without valid IDs
+          if (!note || !note.id) {
+            console.log("Skipping note with no ID:", note);
+            return Promise.resolve({ upvotes: "0", downvotes: "0" });
+          }
+
+          // Create a comments attribute if it doesn't exist
+          if (!note.comments){
+            note.comments = []
+          }
+          
+          return fetch(`${apiBaseUrl}/notes/${note.id}/comments`)
+            .then((res) => {
+              if (!res.ok) {
+                console.log(`Error fetching comments for note ${note.id}: ${res.status}`);
+                return null;
+              }
+              console.log("Retrived comments", res);
+              return res.json();
+            })
+            .catch((error) => {
+              console.error(`Failed to fetch votes for note ${note.id}:`, error);
+              return null;
+            });
+        });
+  
+        const commentResults = await Promise.all(commentPromises);
+        console.log("Comment results:", commentResults);
+  
+        // Add the fetched comments to the note's comment attribute
+        notes.forEach((note, index) => {
+          if (!note || !note.id) return;
+          
+          // Handle potential undefined or malformed vote results
+          const result = commentResults[index] || {comments: []};
+          
+          note.comments = (result.comments.length) ? result.comments.map((comment) => comment.body) : [];
+        });
+        
+        console.log("Notes after updating comments: ", notes);
+        
+      } catch (error) {
+        console.error("Error in vote fetching process:", error);
+      }
+    }
   
     fetchVotes();
+    fetchComments();
   }, [notes]);
 
   // Checks if point (lat, lng) is inside the bounds of UCLA
@@ -823,12 +877,37 @@ const LeafletMap = ({ onLogout, user }) => {
     );
   };
 
-  const submitComment = () => {
+  const submitComment = async () => {
     if (!noteThread) return;
     
     // Initialize comments array if it doesn't exist
     if (!noteThread.comments) {
       noteThread.comments = [];
+    }
+
+    // Save comment to the backend
+    try {
+      const apiBaseUrl = process.env.REACT_APP_API_URL || "";
+      // Match the parameters that the backend expects
+      const response = await fetch(`${apiBaseUrl}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: 1, // Use actual user ID when available
+          note_id: noteThread.id, // Backend expects 'title', not 'text'
+          parent_comment_id: null, // Backend expects 'latitude', not 'lat'
+          body: commentText, // Backend expects 'longitude', not 'lng'
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error saving note:", error);
+      // Keep optimistic update in UI
     }
     
     noteThread.comments = [...noteThread.comments, commentText];

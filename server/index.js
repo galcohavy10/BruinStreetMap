@@ -200,7 +200,7 @@ app.get("/users/username/:username", async (req, res) => {
 /** POST A COMMENT */
 app.post("/comments", async (req, res) => {
   const { user_id, note_id, parent_comment_id, body } = req.body;
-
+  console.log(user_id, note_id, parent_comment_id, body);
   try {
     const result = await pool.query(
       `INSERT INTO comments (user_id, note_id, parent_comment_id, body) 
@@ -212,6 +212,7 @@ app.post("/comments", async (req, res) => {
       .status(201)
       .json({ message: "Comment posted!", comment: result.rows[0] });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Error posting comment" });
   }
 });
