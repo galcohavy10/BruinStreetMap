@@ -289,7 +289,7 @@ const LeafletMap = ({ onLogout }) => {
 
   const submitNote = async () => {
     if (!noteText || !selectedLocation) return;
-
+  
     // Convert single-point notes to squares
     let displayed_bounds = drawingBoundary;
     if (displayed_bounds.length < 3){
@@ -302,9 +302,9 @@ const LeafletMap = ({ onLogout }) => {
         [selectedLocation.lat + lat_delta, selectedLocation.lng - long_delta]
       ]
     }
-
-    console.log("Displayed bounds:",displayed_bounds);
-
+  
+    console.log("Displayed bounds:", displayed_bounds);
+  
     // Prepare the new note
     const newNote = {
       id: `temp-${Date.now()}`,
@@ -317,58 +317,61 @@ const LeafletMap = ({ onLogout }) => {
       bounds: displayed_bounds,
       comments: [],
     };
-
+  
     //reset drawingBoundary to empty array
     setDrawingBoundary([]);
-
+  
     // Optimistically add to UI
     setNotes((prev) => [...prev, newNote]);
-
+  
     // Initialize votes to 0
     setVotes((prev) => ({
       ...prev,
       [newNote.id]: { upvotes: 0, downvotes: 0 },
     }));
-
+  
     // Reset form
     setNoteText("");
     setShowNoteForm(false);
-
+  
     // Submit to API
     const apiBaseUrl = process.env.REACT_APP_API_URL || "";
-
+  
     console.log("API Base URL:", apiBaseUrl);
-
+  
     try {
+      // Match the parameters that the backend expects
       const response = await fetch(`${apiBaseUrl}/notes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          lat: selectedLocation.lat,
-          lng: selectedLocation.lng,
-          text: noteText,
-          color: "#000000",
-          fontSize: "20px",
+          user_id: 1, // Use actual user ID when available
+          title: noteText, // Backend expects 'title', not 'text'
+          latitude: selectedLocation.lat, // Backend expects 'latitude', not 'lat'
+          longitude: selectedLocation.lng, // Backend expects 'longitude', not 'lng'
+          bounds: displayed_bounds, // Include bounds
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error(`Server responded with status: ${response.status}`);
       }
-
+  
       // Update with server data
       const savedNote = await response.json();
       setNotes((prev) =>
-        prev.map((note) => (note.id === newNote.id ? savedNote : note))
+        prev.map((note) => (note.id === newNote.id ? savedNote.note : note))
       );
-
+  
       // Update votes with the real ID
       setVotes((prev) => {
         const newVotes = { ...prev };
-        newVotes[savedNote.id] = newVotes[newNote.id];
-        delete newVotes[newNote.id];
+        if (savedNote.note && savedNote.note.id) {
+          newVotes[savedNote.note.id] = newVotes[newNote.id];
+          delete newVotes[newNote.id];
+        }
         return newVotes;
       });
     } catch (error) {
