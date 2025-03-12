@@ -115,7 +115,8 @@ router.get("/", async (req, res) => {
 router.post("/:id/upvote", async (req, res) => {
   const { id } = req.params;
   const { user_id } = req.body;
-
+  console.log("ID: ", id);
+  console.log("user_id: ", user_id);
   try {
     // Insert or update the vote record
     await pool.query(

@@ -64,8 +64,7 @@ CREATE TABLE IF NOT EXISTS votes (
 
 -- Ensure a user can only upvote OR downvote a note once
 CREATE UNIQUE INDEX IF NOT EXISTS unique_note_vote 
-ON votes(user_id, note_id) 
-WHERE note_id IS NOT NULL;
+ON votes(user_id, note_id);
 
 -- Ensure a user can only upvote OR downvote a comment once
 CREATE UNIQUE INDEX IF NOT EXISTS unique_comment_vote 
@@ -73,9 +72,9 @@ ON votes(user_id, comment_id)
 WHERE comment_id IS NOT NULL;
 
 -- Ensure a user can only upvote OR downvote a note once
-CREATE UNIQUE INDEX IF NOT EXISTS unique_note_vote 
-ON votes(user_id, note_id) 
-WHERE note_id IS NOT NULL;
+--CREATE UNIQUE INDEX IF NOT EXISTS unique_note_vote 
+--ON votes(user_id, note_id) 
+--WHERE note_id IS NOT NULL;
 
 -- Optimize queries for filtering and foreign key lookups
 CREATE INDEX IF NOT EXISTS idx_users_major ON users(major);

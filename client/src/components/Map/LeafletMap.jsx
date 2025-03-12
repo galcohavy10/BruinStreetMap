@@ -132,7 +132,7 @@ const ClickHandler = ({ onMapClick }) => {
   return null;
 };
 
-const LeafletMap = ({ onLogout }) => {
+const LeafletMap = ({ onLogout, user }) => {
   const navigate = useNavigate();
   const coordsRef = useRef(null);
   const [userPosition, setUserPosition] = useState(null);
@@ -234,6 +234,7 @@ const LeafletMap = ({ onLogout }) => {
                 console.log(`Error fetching votes for note ${note.id}: ${res.status}`);
                 return { upvotes: "0", downvotes: "0" };
               }
+              console.log(res);
               return res.json();
             })
             .catch((error) => {
@@ -371,6 +372,14 @@ const LeafletMap = ({ onLogout }) => {
     const apiBaseUrl = process.env.REACT_APP_API_URL || "";
   
     console.log("API Base URL:", apiBaseUrl);
+
+    let user_id_parameter;
+    if (user){
+      user_id_parameter = null;
+    }
+    else{
+      user_id_parameter = 1;
+    }
   
     try {
       // Match the parameters that the backend expects
@@ -380,7 +389,7 @@ const LeafletMap = ({ onLogout }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: 1, // Use actual user ID when available
+          user_id: user_id_parameter, // Use actual user ID when available
           title: noteTitle, // Backend expects 'title', not 'text'
           latitude: selectedLocation.lat, // Backend expects 'latitude', not 'lat'
           longitude: selectedLocation.lng, // Backend expects 'longitude', not 'lng'
@@ -417,6 +426,14 @@ const LeafletMap = ({ onLogout }) => {
     const currentVote = userVotes[noteId];
     const apiBaseUrl = process.env.REACT_APP_API_URL || "";
 
+    let user_id_parameter;
+    if (user){
+      user_id_parameter = user.id;
+    }
+    else{
+      user_id_parameter = 1;
+    }
+
     // Toggle vote if clicking the same button
     if (currentVote === "up" && isUpvote) {
       // Remove upvote
@@ -424,7 +441,7 @@ const LeafletMap = ({ onLogout }) => {
         await fetch(`${apiBaseUrl}/notes/${noteId}/remove-vote`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: 1 }), // Use actual user ID when available
+          body: JSON.stringify({ user_id: user_id_parameter }), // Use actual user ID when available
         });
 
         // Update local state
@@ -456,7 +473,7 @@ const LeafletMap = ({ onLogout }) => {
         await fetch(`${apiBaseUrl}/notes/${noteId}/remove-vote`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: 1 }), // Use actual user ID when available
+          body: JSON.stringify({ user_id: user_id_parameter }), // Use actual user ID when available
         });
 
         // Update local state
@@ -491,7 +508,7 @@ const LeafletMap = ({ onLogout }) => {
       await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: 1 }), // Use actual user ID when available
+        body: JSON.stringify({ user_id: user_id_parameter }), // Use actual user ID when available
       });
 
       // Update local state
@@ -531,6 +548,7 @@ const LeafletMap = ({ onLogout }) => {
         [noteId]: isUpvote ? "up" : "down",
       }));
     } catch (error) {
+      console.log(error);
       console.error(
         `Error ${isUpvote ? "upvoting" : "downvoting"} note:`,
         error
@@ -991,7 +1009,7 @@ const LeafletMap = ({ onLogout }) => {
             
             // Check if note.bounds exists
             if (!note.bounds) {
-              console.log("Note has no bounds:", note);
+              //console.log("Note has no bounds:", note);
               return null;
             }
             
@@ -1344,8 +1362,8 @@ const LeafletMap = ({ onLogout }) => {
                     key={note.id}
                     className="comment-item"
                     onClick={() => {
-                      setNoteThread(note);
-                      setShowNotesList(false);
+                      //setNoteThread(note);
+                      //setShowNotesList(false);
                     }}
                   >
                     <div className="comment-meta">
