@@ -285,7 +285,7 @@ const LeafletMap = ({ onLogout, user }) => {
           // Skip notes without valid IDs
           if (!note || !note.id) {
             console.log("Skipping note with no ID:", note);
-            return Promise.resolve({ upvotes: "0", downvotes: "0" });
+            //return Promise.resolve({ upvotes: "0", downvotes: "0" });
           }
 
           // Create a comments attribute if it doesn't exist
@@ -316,7 +316,12 @@ const LeafletMap = ({ onLogout, user }) => {
           if (!note || !note.id) return;
           
           // Handle potential undefined or malformed vote results
-          const result = commentResults[index] || {comments: []};
+          let result = {comments: []};
+          for (let i = 0; i < commentResults.length; i++){
+            if(commentResults[i] && commentResults[i].comments && commentResults[i].comments.length > 0 && commentResults[i].comments[0].id && commentResults[i].comments[0].id === note.id){
+              result = commentResults[i];
+            }
+          }
           
           note.comments = (result.comments.length) ? result.comments.map((comment) => comment.body) : [];
         });
@@ -665,20 +670,16 @@ const LeafletMap = ({ onLogout, user }) => {
 
   // Helper to convert Leaflet [lat, lng] to Turf [lng, lat]
   const toTurfCoords = (coords) => {
-    if (!coords || !Array.isArray(coords)) {
-      return [];
-    }
-    const mappedCoords = coords.map((c) => [c[1], c[0]]);
-    return [...mappedCoords, mappedCoords[0]]; // Close the polygon
+    coords.map((c) => [c[1], c[0]]);
+    coords = [...coords, coords[0]];
+    return coords;
   };
 
   // Helper to convert Turf [lng, lat] back to Leaflet [lat, lng]
   const toLeafletCoords = (coords) => {
-    if (!coords || !Array.isArray(coords)) {
-      return [];
-    }
-    const mappedCoords = coords.map((c) => [c[1], c[0]]);
-    return mappedCoords.slice(0, mappedCoords.length - 1);
+    coords.map((c) => [c[1], c[0]]);
+    coords = coords.slice(0, coords.length - 1);
+    return coords;
   };
   // Filter notes based on search query
   const filteredNotes = notes.filter((note) => 
@@ -713,6 +714,7 @@ const LeafletMap = ({ onLogout, user }) => {
       console.log("point:", pointGeoJSON);
 
       if (booleanPointInPolygon(pointGeoJSON, polygon)){
+        console.log("Inside polygon:", polygon);
         return note.title.toLowerCase().includes(searchQuery.toLowerCase());
       }
       return false;
@@ -1085,64 +1087,70 @@ const LeafletMap = ({ onLogout, user }) => {
             
             const noteVotes = votes[note.id] || { upvotes: 0, downvotes: 0 };
             const isHighlighted = activeNote && activeNote.id === note.id;
-            
-            // Check if note.bounds exists
             if (!note.bounds) {
               //console.log("Note has no bounds:", note);
               return null;
             }
-            
             let coords = note.bounds;
-            
             if (note.bounds.length > 2) {
-              try {
               const prev_notes = arr.slice(0, index);
+              //console.log("Note bounds polygon ", toTurfCoords(note.bounds));
               let cur_turf = turf.polygon([toTurfCoords(note.bounds)]);
-                
               for (let i = 0; i < prev_notes.length; i++) {
                 let prev_note = prev_notes[i];
-                  if (!prev_note.bounds || prev_note.bounds.length < 3) {
-                    continue;
-                  }
-                  
-                  let prev_turf = turf.polygon([toTurfCoords(prev_note.bounds)]);
-                  
-                  if (cur_turf !== null) {
-                    try {
-                      cur_turf = turf.difference(
-                        turf.featureCollection([cur_turf, prev_turf])
-                      );
-                    } catch (error) {
-                      console.error("Error in turf.difference:", error);
-                    }
-                  }
+                if (!prev_note.bounds || prev_note.bounds.length < 3) {
+                  continue;
                 }
-                
-                if (
-                  cur_turf !== null &&
-                  cur_turf.geometry !== null &&
-                  cur_turf.geometry.type === "MultiPolygon"
-                ) {
-                  coords = cur_turf.geometry.coordinates;
-                } else if (
-                  cur_turf !== null &&
-                  cur_turf.geometry !== null &&
-                  cur_turf.geometry.coordinates !== null
-                ) {
-                  coords = toLeafletCoords(cur_turf.geometry.coordinates[0]);
-                } else {
-                  coords = null;
+                //console.log(
+                //  "Previous note polygon ",
+                //  toTurfCoords(prev_note.bounds)
+                //);
+                let prev_turf = turf.polygon([toTurfCoords(prev_note.bounds)]);
+                //console.log("Current Turf Polygon:", cur_turf);
+                //console.log("Previous Turf Polygon:", prev_turf);
+                //console.log("Difference: ", turf.difference(cur_turf, prev_turf));
+                if (cur_turf !== null) {
+                  cur_turf = turf.difference(
+                    turf.featureCollection([cur_turf, prev_turf])
+                  );
                 }
-              } catch (error) {
-                console.error("Error processing polygon:", error);
+                //console.log("cur_turf after difference: ", cur_turf);
+              }
+              if (
+                cur_turf !== null &&
+                cur_turf.geometry !== null &&
+                cur_turf.geometry.type === "MultiPolygon"
+              ) {
+                //console.log("Current polygon is a multi-poly");
+                //multipolygon = true;
+                //coords = cur_turf.geometry;
+                coords = cur_turf.geometry.coordinates;
+              } else if (
+                cur_turf !== null &&
+                cur_turf.geometry !== null &&
+                cur_turf.coordinates !== null
+              ) {
+                //console.log(
+                //  "Coordinates being converted: ",
+                //  cur_turf.geometry.coordinates[0]
+                //);
+                coords = toLeafletCoords(cur_turf.geometry.coordinates[0]);
+              } else {
+                //console.log("Coords are null");
                 coords = null;
               }
+            }
+            if(note.id == 16){
+              console.log("Coords: ", coords);
+              console.log("note bounds", note.bounds);
+              console.log("is array note bounds", Array.isArray(note.bounds));
+              console.log(note.bounds.length > 2);
             }
             
             /* Render bounds if selected, or else a circle marker*/
             return (
-              <React.Fragment key={note.id}>
-                {note.bounds && Array.isArray(note.bounds) && note.bounds.length > 2 ? (
+              <>
+                {note.bounds.length > 2 ? (
                   <>
                     {!coords ? null : (
                       <Polygon
@@ -1342,10 +1350,9 @@ const LeafletMap = ({ onLogout, user }) => {
                     ) : null}
                   </CircleMarker>
                 )}
-              </React.Fragment>
+              </>
             );
-          })
-          .filter(Boolean) : null /* Filter out null values and handle empty notes array */}
+          }) : null /* Filter out null values and handle empty notes array */}
 
         {/* Building labels */}
         <TextLabels mapLabels={mapLabels} />
