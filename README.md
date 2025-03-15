@@ -14,7 +14,7 @@
 ### Platform
 BruinStreetMap will be an interactive web application geared toward UCLA students. The development stack for the app is:
 - **Frontend:** React.js and React Router V6
-- **Server-Side:** Flask
+- **Server-Side:** Node.js and express
 - **Database:** PostgreSQL (to store user information and queries)
 
 Additionally, the application will integrate the **Google Maps Embed API** to enable users to interactively zoom into specific areas for higher granularity.
